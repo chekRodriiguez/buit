@@ -20,3 +20,4 @@ pub mod wayback;
 pub mod geoip;
 pub mod report;
 pub mod interactive;
+pub mod api;
