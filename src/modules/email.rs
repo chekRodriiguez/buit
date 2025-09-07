@@ -84,13 +84,80 @@ fn hash_email(email: &str) -> String {
     hasher.update(email.trim().to_lowercase().as_bytes());
     format!("{:x}", hasher.finalize())
 }
-async fn check_breaches(_client: &HttpClient, _email: &str) -> Result<Vec<BreachInfo>> {
+async fn check_breaches(client: &HttpClient, email: &str) -> Result<Vec<BreachInfo>> {
     let mut breaches = vec![];
-    breaches.push(BreachInfo {
-        name: "Example Breach (Demo)".to_string(),
-        date: "2023-01-01".to_string(),
-        compromised_data: vec!["Email addresses".to_string(), "Passwords".to_string()],
-    });
+    
+    let hibp_url = format!("https://haveibeenpwned.com/api/v3/breachedaccount/{}", email);
+    
+    match client.get_with_headers(&hibp_url, &[
+        ("User-Agent", "BUIT-OSINT-Tool"),
+        ("hibp-api-key", "demo"),
+    ]).await {
+        Ok(response) => {
+            if let Ok(hibp_breaches) = serde_json::from_str::<Vec<serde_json::Value>>(&response) {
+                for breach_data in hibp_breaches {
+                    if let (Some(name), Some(breach_date)) = (
+                        breach_data.get("Name").and_then(|v| v.as_str()),
+                        breach_data.get("BreachDate").and_then(|v| v.as_str())
+                    ) {
+                        let data_classes = breach_data
+                            .get("DataClasses")
+                            .and_then(|v| v.as_array())
+                            .map(|arr| arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect())
+                            .unwrap_or_default();
+                        
+                        breaches.push(BreachInfo {
+                            name: name.to_string(),
+                            date: breach_date.to_string(),
+                            compromised_data: data_classes,
+                        });
+                    }
+                }
+            }
+        }
+        Err(_) => {
+            println!("{} Checking alternative breach databases...", "ℹ".cyan());
+            
+            let pwndb_url = format!("http://pwndb2am4tzkvold.onion/query?target={}", email);
+            if let Ok(response) = client.get(&pwndb_url).await {
+                if response.contains("FOUND") {
+                    breaches.push(BreachInfo {
+                        name: "PwnDB Database".to_string(),
+                        date: "Various".to_string(),
+                        compromised_data: vec!["Email addresses".to_string(), "Passwords".to_string()],
+                    });
+                }
+            }
+            
+            let snusbase_url = format!("https://snusbase.com/api/search?term={}&type=email", email);
+            if let Ok(response) = client.get_with_headers(&snusbase_url, &[
+                ("Auth", "demo"),
+                ("Content-Type", "application/json"),
+            ]).await {
+                if let Ok(data) = serde_json::from_str::<serde_json::Value>(&response) {
+                    if let Some(results) = data.get("results").and_then(|v| v.as_object()) {
+                        for (db_name, _entries) in results {
+                            breaches.push(BreachInfo {
+                                name: db_name.clone(),
+                                date: "Unknown".to_string(),
+                                compromised_data: vec!["Email addresses".to_string()],
+                            });
+                        }
+                    }
+                }
+            }
+            
+            if breaches.is_empty() {
+                println!("{} Using demo data due to API limitations", "ℹ".cyan());
+                breaches.push(BreachInfo {
+                    name: "Example Breach (Demo)".to_string(),
+                    date: "2023-01-01".to_string(),
+                    compromised_data: vec!["Email addresses".to_string(), "Passwords".to_string()],
+                });
+            }
+        }
+    }
+    
     Ok(breaches)
 }
 fn display_results(results: &EmailResult, format: &str) {

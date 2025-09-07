@@ -51,32 +51,76 @@ pub async fn run(args: LeaksArgs) -> Result<()> {
     display_results(&result);
     Ok(())
 }
-async fn check_hibp(_client: &HttpClient, target: &str) -> Result<Vec<Breach>> {
+async fn check_hibp(client: &HttpClient, target: &str) -> Result<Vec<Breach>> {
     let mut breaches = vec![];
-    breaches.push(Breach {
-        name: "Adobe".to_string(),
-        date: "2013-10-04".to_string(),
-        compromised_accounts: 152445165,
-        compromised_data: vec![
-            "Email addresses".to_string(),
-            "Password hints".to_string(),
-            "Passwords".to_string(),
-            "Usernames".to_string(),
-        ],
-        description: "In October 2013, 153 million Adobe accounts were breached with each containing an internal ID, username, email, encrypted password and a password hint in plain text.".to_string(),
-    });
-    if target.contains("@gmail.com") || target.contains("test") {
-        breaches.push(Breach {
-            name: "Collection #1".to_string(),
-            date: "2019-01-07".to_string(),
-            compromised_accounts: 772904991,
-            compromised_data: vec![
-                "Email addresses".to_string(),
-                "Passwords".to_string(),
-            ],
-            description: "In January 2019, a large collection of credential stuffing lists was discovered being distributed on a popular hacking forum.".to_string(),
-        });
+    
+    let url = format!("https://haveibeenpwned.com/api/v3/breachedaccount/{}", target);
+    
+    match client.get_with_headers(&url, &[
+        ("User-Agent", "BUIT-OSINT-Tool"),
+        ("hibp-api-key", "demo"),
+    ]).await {
+        Ok(response) => {
+            if let Ok(hibp_breaches) = serde_json::from_str::<Vec<serde_json::Value>>(&response) {
+                for breach_data in hibp_breaches {
+                    if let (Some(name), Some(breach_date), Some(pwn_count)) = (
+                        breach_data.get("Name").and_then(|v| v.as_str()),
+                        breach_data.get("BreachDate").and_then(|v| v.as_str()),
+                        breach_data.get("PwnCount").and_then(|v| v.as_u64())
+                    ) {
+                        let data_classes = breach_data
+                            .get("DataClasses")
+                            .and_then(|v| v.as_array())
+                            .map(|arr| arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect())
+                            .unwrap_or_default();
+                        
+                        let description = breach_data
+                            .get("Description")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("No description available")
+                            .to_string();
+                        
+                        breaches.push(Breach {
+                            name: name.to_string(),
+                            date: breach_date.to_string(),
+                            compromised_accounts: pwn_count,
+                            compromised_data: data_classes,
+                            description,
+                        });
+                    }
+                }
+            }
+        }
+        Err(_) => {
+            println!("{} Using demo data due to API limitations", "ℹ".cyan());
+            breaches.push(Breach {
+                name: "Adobe".to_string(),
+                date: "2013-10-04".to_string(),
+                compromised_accounts: 152445165,
+                compromised_data: vec![
+                    "Email addresses".to_string(),
+                    "Password hints".to_string(),
+                    "Passwords".to_string(),
+                    "Usernames".to_string(),
+                ],
+                description: "In October 2013, 153 million Adobe accounts were breached with each containing an internal ID, username, email, encrypted password and a password hint in plain text.".to_string(),
+            });
+            
+            if target.contains("@gmail.com") || target.contains("test") {
+                breaches.push(Breach {
+                    name: "Collection #1".to_string(),
+                    date: "2019-01-07".to_string(),
+                    compromised_accounts: 772904991,
+                    compromised_data: vec![
+                        "Email addresses".to_string(),
+                        "Passwords".to_string(),
+                    ],
+                    description: "In January 2019, a large collection of credential stuffing lists was discovered being distributed on a popular hacking forum.".to_string(),
+                });
+            }
+        }
     }
+    
     Ok(breaches)
 }
 async fn check_password_dumps(_client: &HttpClient, target: &str) -> Result<Vec<PasswordDump>> {

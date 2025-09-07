@@ -47,4 +47,14 @@ impl HttpClient {
         let json = response.json::<T>().await?;
         Ok(json)
     }
+    
+    pub async fn get_with_headers(&self, url: &str, headers: &[(&str, &str)]) -> Result<String> {
+        let mut request = self.client.get(url);
+        for (key, value) in headers {
+            request = request.header(*key, *value);
+        }
+        let response = request.send().await?;
+        let text = response.text().await?;
+        Ok(text)
+    }
 }

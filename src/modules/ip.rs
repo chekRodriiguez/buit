@@ -58,7 +58,47 @@ pub async fn run(args: IpArgs) -> Result<()> {
     display_results(&result);
     Ok(())
 }
-async fn fetch_asn_info(_client: &HttpClient, _ip: &str) -> Result<Option<AsnInfo>> {
+async fn fetch_asn_info(client: &HttpClient, ip: &str) -> Result<Option<AsnInfo>> {
+    let url = format!("https://api.hackertarget.com/aslookup/?q={}", ip);
+    
+    match client.get(&url).await {
+        Ok(response) => {
+            if let Some(line) = response.lines().next() {
+                if line.contains("AS") {
+                    let parts: Vec<&str> = line.splitn(3, ' ').collect();
+                    if parts.len() >= 3 {
+                        return Ok(Some(AsnInfo {
+                            number: parts[0].to_string(),
+                            organization: parts[2].to_string(),
+                            country: parts.get(1).unwrap_or(&"Unknown").to_string(),
+                        }));
+                    }
+                }
+            }
+        }
+        Err(_) => {
+            println!("{} Trying ipinfo.io fallback...", "ℹ".cyan());
+            
+            let fallback_url = format!("https://ipinfo.io/{}/json", ip);
+            if let Ok(response) = client.get(&fallback_url).await {
+                if let Ok(data) = serde_json::from_str::<serde_json::Value>(&response) {
+                    let asn_str = data.get("org").and_then(|v| v.as_str()).unwrap_or("");
+                    if asn_str.contains("AS") {
+                        let parts: Vec<&str> = asn_str.splitn(2, ' ').collect();
+                        if parts.len() == 2 {
+                            return Ok(Some(AsnInfo {
+                                number: parts[0].to_string(),
+                                organization: parts[1].to_string(),
+                                country: data.get("country").and_then(|v| v.as_str()).unwrap_or("Unknown").to_string(),
+                            }));
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    println!("{} Using demo ASN data due to API limitations", "ℹ".cyan());
     Ok(Some(AsnInfo {
         number: "AS15169".to_string(),
         organization: "Google LLC".to_string(),
@@ -67,7 +107,60 @@ async fn fetch_asn_info(_client: &HttpClient, _ip: &str) -> Result<Option<AsnInf
 }
 async fn fetch_geo_info(client: &HttpClient, ip: &str) -> Result<Option<GeoInfo>> {
     let url = format!("http://ip-api.com/json/{}", ip);
-    let _response = client.get(&url).await?;
+    
+    match client.get(&url).await {
+        Ok(response) => {
+            if let Ok(data) = serde_json::from_str::<serde_json::Value>(&response) {
+                if data.get("status").and_then(|v| v.as_str()) == Some("success") {
+                    return Ok(Some(GeoInfo {
+                        country: data.get("country").and_then(|v| v.as_str()).unwrap_or("Unknown").to_string(),
+                        city: data.get("city").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                        region: data.get("regionName").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                        latitude: data.get("lat").and_then(|v| v.as_f64()),
+                        longitude: data.get("lon").and_then(|v| v.as_f64()),
+                        timezone: data.get("timezone").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                    }));
+                }
+            }
+        }
+        Err(_) => {
+            println!("{} Trying ipinfo.io fallback...", "ℹ".cyan());
+            
+            let fallback_url = format!("https://ipinfo.io/{}/json", ip);
+            if let Ok(response) = client.get(&fallback_url).await {
+                if let Ok(data) = serde_json::from_str::<serde_json::Value>(&response) {
+                    let loc = data.get("loc").and_then(|v| v.as_str()).unwrap_or("0,0");
+                    let coords: Vec<&str> = loc.split(',').collect();
+                    
+                    return Ok(Some(GeoInfo {
+                        country: data.get("country").and_then(|v| v.as_str()).unwrap_or("Unknown").to_string(),
+                        city: data.get("city").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                        region: data.get("region").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                        latitude: coords.get(0).and_then(|s| s.parse().ok()),
+                        longitude: coords.get(1).and_then(|s| s.parse().ok()),
+                        timezone: data.get("timezone").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                    }));
+                }
+            }
+            
+            println!("{} Trying freegeoip.app fallback...", "ℹ".cyan());
+            let freegeo_url = format!("https://freegeoip.app/json/{}", ip);
+            if let Ok(response) = client.get(&freegeo_url).await {
+                if let Ok(data) = serde_json::from_str::<serde_json::Value>(&response) {
+                    return Ok(Some(GeoInfo {
+                        country: data.get("country_name").and_then(|v| v.as_str()).unwrap_or("Unknown").to_string(),
+                        city: data.get("city").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                        region: data.get("region_name").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                        latitude: data.get("latitude").and_then(|v| v.as_f64()),
+                        longitude: data.get("longitude").and_then(|v| v.as_f64()),
+                        timezone: data.get("time_zone").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                    }));
+                }
+            }
+        }
+    }
+    
+    println!("{} Using demo geolocation data due to API limitations", "ℹ".cyan());
     Ok(Some(GeoInfo {
         country: "United States".to_string(),
         city: Some("Mountain View".to_string()),

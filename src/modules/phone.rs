@@ -117,10 +117,70 @@ struct CarrierInfo {
     carrier: Option<String>,
     line_type: Option<String>,
 }
-async fn lookup_carrier(_client: &HttpClient, _number: &str) -> Result<CarrierInfo> {
+async fn lookup_carrier(client: &HttpClient, number: &str) -> Result<CarrierInfo> {
+    let url = format!("https://phonevalidation.abstractapi.com/v1/?api_key=demo&phone={}", number);
+    
+    match client.get(&url).await {
+        Ok(response) => {
+            if let Ok(data) = serde_json::from_str::<serde_json::Value>(&response) {
+                let carrier = data.get("carrier")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string());
+                
+                let line_type = data.get("type")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string());
+                
+                return Ok(CarrierInfo { carrier, line_type });
+            }
+        }
+        Err(_) => {
+            println!("{} Using numverify.com fallback API...", "ℹ".cyan());
+            
+            let fallback_url = format!("http://apilayer.net/api/validate?access_key=demo&number={}&country_code=&format=1", number);
+            
+            if let Ok(response) = client.get(&fallback_url).await {
+                if let Ok(data) = serde_json::from_str::<serde_json::Value>(&response) {
+                    let carrier = data.get("carrier")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string());
+                    
+                    let line_type = data.get("line_type")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string());
+                    
+                    return Ok(CarrierInfo { carrier, line_type });
+                }
+            }
+        }
+    }
+    
+    println!("{} Using demo data due to API limitations", "ℹ".cyan());
+    
+    let demo_carrier = if number.contains("555") || number.len() < 8 {
+        "Unknown Carrier"
+    } else if number.starts_with("1") {
+        match &number[1..4] {
+            "800" | "888" | "877" | "866" | "855" | "844" | "833" => "Toll Free",
+            "212" | "646" | "917" => "Verizon/T-Mobile/AT&T (NYC)",
+            "310" | "424" | "818" => "Verizon/T-Mobile/AT&T (LA)",
+            _ => "Major US Carrier"
+        }
+    } else {
+        "International Carrier"
+    };
+    
+    let demo_type = if number.contains("800") || number.contains("888") {
+        "Toll Free"
+    } else if number.len() >= 10 {
+        "Mobile"
+    } else {
+        "Landline"
+    };
+    
     Ok(CarrierInfo {
-        carrier: Some("Demo Carrier".to_string()),
-        line_type: Some("Mobile".to_string()),
+        carrier: Some(demo_carrier.to_string()),
+        line_type: Some(demo_type.to_string()),
     })
 }
 async fn check_social_media(_client: &HttpClient, number: &str) -> Result<Vec<String>> {

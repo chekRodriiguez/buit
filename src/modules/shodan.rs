@@ -32,7 +32,91 @@ pub async fn run(args: ShodanArgs) -> Result<()> {
     display_results(&results);
     Ok(())
 }
-async fn search_shodan(_client: &HttpClient, query: &str, limit: usize, include_vulns: bool) -> Result<ShodanResult> {
+async fn search_shodan(client: &HttpClient, query: &str, limit: usize, include_vulns: bool) -> Result<ShodanResult> {
+    let config = Config::load()?;
+    
+    if let Some(api_key) = config.get_api_key("shodan") {
+        let url = format!("https://api.shodan.io/shodan/host/search?key={}&query={}&limit={}", 
+            api_key, urlencoding::encode(query), limit);
+        
+        match client.get(&url).await {
+            Ok(response) => {
+                if let Ok(data) = serde_json::from_str::<serde_json::Value>(&response) {
+                    let mut hosts = vec![];
+                    
+                    if let Some(matches) = data.get("matches").and_then(|v| v.as_array()) {
+                        for match_data in matches.iter().take(limit) {
+                            let ip = match_data.get("ip_str")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("Unknown")
+                                .to_string();
+                            
+                            let port = match_data.get("port")
+                                .and_then(|v| v.as_u64())
+                                .unwrap_or(80) as u16;
+                            
+                            let service = match_data.get("product")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("Unknown")
+                                .to_string();
+                            
+                            let banner = match_data.get("data")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("")
+                                .lines()
+                                .take(3)
+                                .collect::<Vec<_>>()
+                                .join("\n");
+                            
+                            let location = format!("{}, {}",
+                                match_data.get("location").and_then(|l| l.get("city")).and_then(|v| v.as_str()).unwrap_or("Unknown"),
+                                match_data.get("location").and_then(|l| l.get("country_name")).and_then(|v| v.as_str()).unwrap_or("Unknown")
+                            );
+                            
+                            let org = match_data.get("org")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("Unknown")
+                                .to_string();
+                            
+                            let mut vulns = vec![];
+                            if include_vulns {
+                                if let Some(vulns_data) = match_data.get("vulns").and_then(|v| v.as_object()) {
+                                    vulns = vulns_data.keys().cloned().collect();
+                                }
+                            }
+                            
+                            hosts.push(ShodanHost {
+                                ip,
+                                port,
+                                service,
+                                banner,
+                                location,
+                                org,
+                                vulns,
+                            });
+                        }
+                    }
+                    
+                    let total = data.get("total")
+                        .and_then(|v| v.as_u64())
+                        .unwrap_or(0) as usize;
+                    
+                    return Ok(ShodanResult {
+                        query: query.to_string(),
+                        total_found: total,
+                        results: hosts,
+                    });
+                }
+            }
+            Err(e) => {
+                println!("{} Shodan API error: {}", "⚠".yellow(), e);
+                println!("{} Falling back to demo data...", "ℹ".cyan());
+            }
+        }
+    }
+    
+    println!("{} Using demo data due to API limitations", "ℹ".cyan());
+    
     let mut hosts = vec![];
     for i in 0..limit.min(5) {
         let mut vulns = vec![];
@@ -72,6 +156,7 @@ async fn search_shodan(_client: &HttpClient, query: &str, limit: usize, include_
             vulns,
         });
     }
+    
     Ok(ShodanResult {
         query: query.to_string(),
         total_found: hosts.len(),
