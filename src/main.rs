@@ -54,7 +54,17 @@ async fn main() -> Result<()> {
         eprintln!("Setup error: {}", e);
     }
     let cli = cli::Cli::parse();
-    match cli.command {
+    
+    if cli.api {
+        return modules::api::start_api_server(cli.port).await;
+    }
+    
+    if cli.command.is_none() {
+        eprintln!("{} No command specified. Use --help for usage information.", "❌".red());
+        return Ok(());
+    }
+    
+    match cli.command.unwrap() {
         cli::Commands::Username(args) => {
             modules::username::run(args).await?;
         }
