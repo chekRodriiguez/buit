@@ -25,8 +25,8 @@ async fn main() -> Result<()> {
         println!("{}", text.to_string().magenta().bold());
     }
     println!("{}", "╔═══════════════════════════════════════════════╗".cyan().bold());
-    println!("{}", "║        Buu Undercover Intelligence Toolkit   ║".cyan().bold());
-    println!("{}", "║         Advanced OSINT Security Framework    ║".green().bold());
+    println!("{}", "║        Buu Undercover Intelligence Toolkit    ║".cyan().bold());
+    println!("{}", "║         Advanced OSINT Security Framework     ║".green().bold());
     println!("{}", "║        For Authorized Security Testing Only   ║".yellow());
     println!("{}", "╚═══════════════════════════════════════════════╝".cyan().bold());
     println!("");
