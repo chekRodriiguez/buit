@@ -265,6 +265,14 @@ Always ensure proper authorization before conducting reconnaissance activities.
 
 </details>
 
+## 🎬 Demo Videos
+
+### Username Search Demo
+![Username Demo](assets/username_demo.gif)
+
+### Subdomain Enumeration Demo  
+![Subdomain Demo](assets/subdomain_demo.gif)
+
 ## 📄 License
 
 <div align="center">
