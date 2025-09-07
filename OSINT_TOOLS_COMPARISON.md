@@ -14,9 +14,9 @@
 | **💻 Memory Usage** | **Low (5-20 MB)** | High (50-200 MB) | Moderate (20-50 MB) |
 | **📱 Portability** | **Single binary** | Requires Python env | Requires Python env |
 | **🌍 Cross-Platform** | ✅ Windows/macOS/Linux | ✅ Linux/macOS (limited Windows) | ✅ Linux/macOS/Windows |
-| **🎯 OSINT Modules** | **20+ modules** | **200+ modules** | **15+ engines** |
+| **🎯 OSINT Modules** | **22+ modules** | **200+ modules** | **15+ engines** |
 | **🔍 Focus Areas** | All-in-one toolkit | Comprehensive automation | Email/subdomain recon |
-| **📊 Data Visualization** | CLI + Reports | Web UI + Reports | CLI only |
+| **📊 Data Visualization** | **CLI + Reports + API REST** | Web UI + Reports | CLI only |
 | **⚙️ Configuration** | Built-in config system | Web-based config | Command-line flags |
 | **🔐 Auto-Setup** | ✅ **Intelligent installer** | ❌ Manual setup | ❌ Manual setup |
 | **🐳 Container Support** | Planned | ✅ Docker available | ✅ Docker available |
@@ -60,24 +60,57 @@
 - **SpiderFoot**: Requires infrastructure planning
 - **theHarvester**: Simple integration into existing workflows
 
+## 🔧 Complete Module Overview
+
+### 📋 **Current BUIT Modules (v1.0.3)**
+
+1. **👤 Username** - Multi-platform username enumeration
+2. **📧 Email** - Email verification & breach checking
+3. **🔍 Search** - Multiple search engine queries (DuckDuckGo, Google, Bing)
+4. **🎯 Dork** - Advanced Google dorking with filters
+5. **📱 Social** - Social media reconnaissance
+6. **⚙️ Config** - Configuration & API key management
+7. **📞 Phone** - Phone number lookup & carrier info
+8. **🌐 IP** - IP address analysis (reverse DNS, ASN, geo)
+9. **🏠 Domain** - Domain analysis (DNS, SSL, WHOIS)
+10. **💀 Leaks** - Data breach checking (HaveIBeenPwned)
+11. **📄 Metadata** - File metadata extraction
+12. **🔗 Subdomain** - Subdomain enumeration (CT logs, brute force)
+13. **🔍 Shodan** - Shodan search with vulnerability info
+14. **🔒 Portscan** - TCP/UDP port scanning
+15. **📋 Whois** - WHOIS information lookup
+16. **🖼️ ReverseImage** - Reverse image search
+17. **📦 Github** - GitHub OSINT & secret scanning
+18. **#️⃣ Hash** - Hash identification & cracking
+19. **🌍 Urlscan** - URL scanning with screenshots
+20. **⏪ Wayback** - Wayback Machine lookup
+21. **🗺️ Geoip** - GeoIP location with ISP info
+22. **📊 Report** - Multi-format report generation (HTML, Markdown, PDF)
+23. **🎮 Interactive** - Interactive guided mode
+24. **🛠️ API** - RESTful API server mode
+
 ## 🌟 BUIT's Competitive Advantages
 
 ### ⚡ **Performance Leader**
 - **10x faster startup** than Python alternatives
 - **3-5x lower memory usage** than SpiderFoot
 - **Zero dependency hell** - works everywhere immediately
+- **Native Rust performance** - compiled binary efficiency
 
 ### 🎯 **Modern Design Philosophy**
 - **Auto-setup system** - installs itself intelligently
 - **Cross-platform binary** - single artifact works everywhere
 - **Interactive workflows** - guides users through complex tasks
 - **Built-in configuration** - no external config files needed
+- **API server mode** - RESTful API for integration
+- **Multi-format reports** - HTML, Markdown, PDF output
 
 ### 🚀 **Operational Excellence**
 - **Instant deployment** - download and run
 - **Offline capable** - no network requirements for basic functions
 - **Update simplicity** - replace single binary
 - **Container-ready** - small footprint for containerization
+- **Multi-platform support** - Windows, macOS (ARM64/x64), Linux
 
 ## 📈 Market Position Analysis
 
@@ -91,14 +124,17 @@
 
 ## 🎖️ Verdict
 
-**BUIT represents the next generation of OSINT tools** - combining the comprehensive functionality users expect with modern performance, security, and deployment characteristics. 
+**BUIT represents the next generation of OSINT tools** - combining 22+ comprehensive modules with modern performance, security, and deployment characteristics. 
 
-While established tools like SpiderFoot excel in module count and theHarvester in specific use cases, **BUIT offers the best balance of performance, portability, and user experience** for modern security professionals.
+While established tools like SpiderFoot excel in module count (200+) and theHarvester in specific use cases, **BUIT offers the best balance of feature completeness (22+ modules), performance, portability, and user experience** for modern security professionals. With built-in API server mode, interactive guidance, and multi-format reporting, BUIT addresses both manual and automated OSINT workflows.
 
 ### 🏁 Quick Decision Matrix:
-- **Need maximum modules?** → SpiderFoot
+- **Need maximum modules (200+)?** → SpiderFoot
 - **Need fastest email recon?** → theHarvester  
-- **Need modern, fast, portable toolkit?** → **BUIT** 🚀
+- **Need modern, fast, portable toolkit (22+ modules)?** → **BUIT** 🚀
+- **Need API integration?** → **BUIT** (RESTful API mode)
+- **Need interactive guidance?** → **BUIT** (Interactive mode)
+- **Need multi-format reporting?** → **BUIT** (HTML/MD/PDF)
 
 ---
 *Benchmark data collected September 2025. Your results may vary based on system configuration and use case.*
