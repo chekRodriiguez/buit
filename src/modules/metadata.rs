@@ -5,7 +5,7 @@ use std::fs;
 use std::path::Path;
 // use kamadak_exif::{Reader, In, Tag};
 use pdf_extract::extract_text;
-use serde_json::{json, Value};
+use serde_json::json;
 
 pub fn run(args: MetadataArgs) -> Result<()> {
     println!("{} Extracting metadata from: {}", "📄".cyan(), args.file.yellow().bold());

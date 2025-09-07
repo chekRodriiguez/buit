@@ -2,10 +2,8 @@ use crate::cli::ReverseImageArgs;
 use anyhow::Result;
 use colored::*;
 use reqwest::Client;
-use scraper::{Html, Selector};
 use std::path::Path;
 use url::Url;
-use base64::{Engine as _, engine::general_purpose};
 use std::fs;
 
 pub async fn run(args: ReverseImageArgs) -> Result<()> {
@@ -85,7 +83,7 @@ async fn search_google_images(image_source: &str, image_data: &[u8]) -> Result<(
     println!("\n{} Google Images Search", "🔍".cyan());
     println!("{}", "=".repeat(40));
     
-    let client = Client::new();
+    let _client = Client::new();
     
     // Google Images reverse search URL
     let search_url = "https://www.google.com/searchbyimage";
@@ -125,7 +123,7 @@ async fn search_bing_images(image_source: &str, image_data: &[u8]) -> Result<()>
     println!("\n{} Bing Visual Search", "🔍".cyan());
     println!("{}", "=".repeat(40));
     
-    let client = Client::new();
+    let _client = Client::new();
     
     // Bing Visual Search API would be used here
     let search_url = "https://www.bing.com/images/search";
@@ -163,7 +161,7 @@ async fn search_tineye(image_source: &str, image_data: &[u8]) -> Result<()> {
     println!("\n{} TinEye Reverse Search", "👁️".cyan());
     println!("{}", "=".repeat(40));
     
-    let client = Client::new();
+    let _client = Client::new();
     
     // TinEye API would be used here (requires API key)
     println!("🌐 TinEye API endpoint");
@@ -194,7 +192,7 @@ async fn search_yandex_images(image_source: &str, image_data: &[u8]) -> Result<(
     println!("\n{} Yandex Images Search", "🔍".cyan());
     println!("{}", "=".repeat(40));
     
-    let client = Client::new();
+    let _client = Client::new();
     
     // Yandex Images reverse search
     println!("🌐 Yandex Images API");
@@ -233,53 +231,3 @@ async fn search_yandex_images(image_source: &str, image_data: &[u8]) -> Result<(
     Ok(())
 }
 
-// Helper function to analyze image properties
-fn analyze_image_properties(image_data: &[u8]) -> Result<()> {
-    println!("\n{} Image Analysis", "📊".cyan());
-    println!("{}", "=".repeat(40));
-    
-    println!("📏 File size: {} bytes ({:.2} KB)", 
-        image_data.len(), 
-        image_data.len() as f64 / 1024.0
-    );
-    
-    // Detect image format by magic bytes
-    let format = detect_image_format(image_data);
-    println!("🏷️  Format: {}", format.yellow());
-    
-    // Calculate basic hash for deduplication
-    let hash = calculate_simple_hash(image_data);
-    println!("🔢 Simple hash: {}", hash.cyan());
-    
-    Ok(())
-}
-
-fn detect_image_format(data: &[u8]) -> &'static str {
-    if data.len() < 4 {
-        return "unknown";
-    }
-    
-    match &data[0..4] {
-        [0xFF, 0xD8, 0xFF, _] => "JPEG",
-        [0x89, 0x50, 0x4E, 0x47] => "PNG", 
-        [0x47, 0x49, 0x46, 0x38] => "GIF",
-        [0x42, 0x4D, _, _] => "BMP",
-        _ => {
-            // Check for WebP
-            if data.len() >= 12 && &data[0..4] == b"RIFF" && &data[8..12] == b"WEBP" {
-                "WebP"
-            } else {
-                "unknown"
-            }
-        }
-    }
-}
-
-fn calculate_simple_hash(data: &[u8]) -> String {
-    use std::collections::hash_map::DefaultHasher;
-    use std::hash::{Hash, Hasher};
-    
-    let mut hasher = DefaultHasher::new();
-    data.hash(&mut hasher);
-    format!("{:x}", hasher.finish())
-}

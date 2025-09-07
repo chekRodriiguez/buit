@@ -42,6 +42,7 @@ pub struct ApiQuery {
     pub format: Option<String>,
     pub limit: Option<usize>,
     pub platforms: Option<String>,
+    #[allow(dead_code)]
     pub verbose: Option<bool>,
     pub ports: Option<String>,
     pub scan_type: Option<String>,
@@ -65,6 +66,7 @@ where
         }
     }
 
+    #[allow(dead_code)]
     pub fn error(error: String) -> ApiResponse<Value> {
         ApiResponse {
             success: false,
@@ -215,7 +217,7 @@ async fn email_handler(
 
 async fn subdomain_handler(
     Path(domain): Path<String>,
-    Query(params): Query<ApiQuery>
+    Query(_params): Query<ApiQuery>
 ) -> Result<Json<ApiResponse<Value>>, StatusCode> {
     let args = SubdomainArgs {
         domain: domain.clone(),

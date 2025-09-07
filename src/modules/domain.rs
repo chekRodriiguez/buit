@@ -2,13 +2,11 @@ use crate::cli::DomainArgs;
 use anyhow::Result;
 use colored::*;
 use reqwest::Client;
-use serde_json::{json, Value};
 use std::collections::HashMap;
 use trust_dns_resolver::{
     config::{ResolverConfig, ResolverOpts},
-    Resolver, TokioAsyncResolver
+    TokioAsyncResolver
 };
-use trust_dns_resolver::proto::rr::RecordType;
 use whois::WhoIs;
 
 pub async fn run(args: DomainArgs) -> Result<()> {
@@ -161,7 +159,7 @@ async fn get_ssl_details(domain: &str) -> Result<HashMap<String, String>> {
     Ok(details)
 }
 
-async fn perform_whois_analysis(domain: &str) -> Result<()> {
+async fn perform_whois_analysis(_domain: &str) -> Result<()> {
     println!("\n{} WHOIS Information", "📋".cyan());
     println!("{}", "=".repeat(40));
     

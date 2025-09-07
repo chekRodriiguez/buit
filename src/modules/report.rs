@@ -2,8 +2,7 @@ use crate::cli::ReportArgs;
 use anyhow::Result;
 use colored::*;
 use std::fs;
-use std::path::Path;
-use chrono::{DateTime, Utc};
+use chrono::Utc;
 use handlebars::Handlebars;
 use serde_json::{json, Value};
 
