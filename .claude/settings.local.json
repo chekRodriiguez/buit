@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git tag:*)",
+      "Bash(gh release:*)",
+      "Bash(where gh)",
+      "Bash(\"C:\\Program Files\\GitHub CLI\\gh.exe\" release delete v1.0.3 --yes)",
+      "Bash(cargo build:*)",
+      "Bash(rustup target:*)",
+      "Bash(echo $env:PROCESSOR_ARCHITECTURE)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(gh run list:*)",
+      "Bash(gh run watch:*)",
+      "Bash(git reset:*)",
+      "Bash(gh workflow run:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
