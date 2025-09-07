@@ -9,8 +9,14 @@ use clap::{Parser, Subcommand};
 🚀 Contribute: https://github.com/BuuDevOff/BUIT
 💡 Each module has detailed help: buit <module> --help")]
 pub struct Cli {
+    #[arg(long, help = "Start API server mode")]
+    pub api: bool,
+    
+    #[arg(long, default_value = "1337", help = "API server port")]
+    pub port: u16,
+    
     #[command(subcommand)]
-    pub command: Commands,
+    pub command: Option<Commands>,
 }
 #[derive(Subcommand)]
 pub enum Commands {
@@ -63,7 +69,7 @@ pub enum Commands {
     #[command(about = "Setup BUIT installation")]
     Setup,
 }
-#[derive(Parser)]
+#[derive(Parser, Clone)]
 pub struct UsernameArgs {
     #[arg(help = "Username to search for")]
     pub username: String,
@@ -74,7 +80,7 @@ pub struct UsernameArgs {
     #[arg(short, long, help = "Platforms to search (comma-separated)")]
     pub platforms: Option<String>,
 }
-#[derive(Parser)]
+#[derive(Parser, Clone)]
 pub struct EmailArgs {
     #[arg(help = "Email address to check")]
     pub email: String,
@@ -85,7 +91,7 @@ pub struct EmailArgs {
     #[arg(short, long, help = "Output format (json, csv, text)", default_value = "text")]
     pub format: String,
 }
-#[derive(Parser)]
+#[derive(Parser, Clone)]
 pub struct SearchArgs {
     #[arg(help = "Search query")]
     pub query: String,
@@ -96,7 +102,7 @@ pub struct SearchArgs {
     #[arg(short, long, help = "Include deep web results")]
     pub deep: bool,
 }
-#[derive(Parser)]
+#[derive(Parser, Clone)]
 pub struct DorkArgs {
     #[arg(help = "Dork query")]
     pub query: String,
@@ -109,7 +115,7 @@ pub struct DorkArgs {
     #[arg(short, long, help = "Search in title")]
     pub intitle: Option<String>,
 }
-#[derive(Parser)]
+#[derive(Parser, Clone)]
 pub struct SocialArgs {
     #[arg(help = "Target identifier (username, email, or phone)")]
     pub target: String,
@@ -120,12 +126,12 @@ pub struct SocialArgs {
     #[arg(short, long, help = "Include profile analysis")]
     pub analyze: bool,
 }
-#[derive(Parser)]
+#[derive(Parser, Clone)]
 pub struct ConfigArgs {
     #[command(subcommand)]
     pub action: ConfigAction,
 }
-#[derive(Subcommand)]
+#[derive(Subcommand, Clone)]
 pub enum ConfigAction {
     #[command(about = "Set an API key")]
     SetKey {
@@ -161,7 +167,7 @@ pub enum ConfigAction {
         service: Option<String>,
     },
 }
-#[derive(Parser)]
+#[derive(Parser, Clone)]
 pub struct PhoneArgs {
     #[arg(help = "Phone number to lookup")]
     pub number: String,
@@ -170,7 +176,7 @@ pub struct PhoneArgs {
     #[arg(short, long, help = "Output format")]
     pub format: Option<String>,
 }
-#[derive(Parser)]
+#[derive(Parser, Clone)]
 pub struct IpArgs {
     #[arg(help = "IP address to analyze")]
     pub ip: String,
@@ -181,7 +187,7 @@ pub struct IpArgs {
     #[arg(short, long, help = "Include geolocation")]
     pub geo: bool,
 }
-#[derive(Parser)]
+#[derive(Parser, Clone)]
 pub struct DomainArgs {
     #[arg(help = "Domain to analyze")]
     pub domain: String,
@@ -192,7 +198,7 @@ pub struct DomainArgs {
     #[arg(short, long, help = "Include WHOIS information")]
     pub whois: bool,
 }
-#[derive(Parser)]
+#[derive(Parser, Clone)]
 pub struct LeaksArgs {
     #[arg(help = "Email or username to check")]
     pub target: String,
@@ -201,14 +207,14 @@ pub struct LeaksArgs {
     #[arg(short, long, help = "Include password dumps")]
     pub passwords: bool,
 }
-#[derive(Parser)]
+#[derive(Parser, Clone)]
 pub struct MetadataArgs {
     #[arg(help = "File path to extract metadata from")]
     pub file: String,
     #[arg(short, long, help = "Output format")]
     pub format: Option<String>,
 }
-#[derive(Parser)]
+#[derive(Parser, Clone)]
 pub struct SubdomainArgs {
     #[arg(help = "Domain to enumerate subdomains")]
     pub domain: String,
@@ -219,7 +225,7 @@ pub struct SubdomainArgs {
     #[arg(long, help = "Skip availability testing for faster results")]
     pub skip_alive_check: bool,
 }
-#[derive(Parser)]
+#[derive(Parser, Clone)]
 pub struct ShodanArgs {
     #[arg(help = "Search query")]
     pub query: String,
@@ -228,7 +234,7 @@ pub struct ShodanArgs {
     #[arg(short, long, help = "Include vulnerability info")]
     pub vulns: bool,
 }
-#[derive(Parser)]
+#[derive(Parser, Clone)]
 pub struct PortscanArgs {
     #[arg(help = "Target IP or hostname")]
     pub target: String,
@@ -237,21 +243,21 @@ pub struct PortscanArgs {
     #[arg(short, long, help = "Scan type (tcp, udp)")]
     pub scan_type: Option<String>,
 }
-#[derive(Parser)]
+#[derive(Parser, Clone)]
 pub struct WhoisArgs {
     #[arg(help = "Domain or IP to lookup")]
     pub target: String,
     #[arg(short, long, help = "Parse output")]
     pub parse: bool,
 }
-#[derive(Parser)]
+#[derive(Parser, Clone)]
 pub struct ReverseImageArgs {
     #[arg(help = "Image URL or file path")]
     pub image: String,
     #[arg(short, long, help = "Search engines to use")]
     pub engines: Option<String>,
 }
-#[derive(Parser)]
+#[derive(Parser, Clone)]
 pub struct GithubArgs {
     #[arg(help = "GitHub username or organization")]
     pub target: String,
@@ -260,7 +266,7 @@ pub struct GithubArgs {
     #[arg(short, long, help = "Include repositories")]
     pub repos: bool,
 }
-#[derive(Parser)]
+#[derive(Parser, Clone)]
 pub struct HashArgs {
     #[arg(help = "Hash to identify or crack")]
     pub hash: String,
@@ -269,14 +275,14 @@ pub struct HashArgs {
     #[arg(short, long, help = "Attempt to crack")]
     pub crack: bool,
 }
-#[derive(Parser)]
+#[derive(Parser, Clone)]
 pub struct UrlscanArgs {
     #[arg(help = "URL to scan")]
     pub url: String,
     #[arg(short, long, help = "Include screenshot")]
     pub screenshot: bool,
 }
-#[derive(Parser)]
+#[derive(Parser, Clone)]
 pub struct WaybackArgs {
     #[arg(help = "URL to lookup")]
     pub url: String,
@@ -285,14 +291,14 @@ pub struct WaybackArgs {
     #[arg(short, long, help = "Limit results")]
     pub limit: Option<usize>,
 }
-#[derive(Parser)]
+#[derive(Parser, Clone)]
 pub struct GeoipArgs {
     #[arg(help = "IP address to geolocate")]
     pub ip: String,
     #[arg(short, long, help = "Include ISP information")]
     pub isp: bool,
 }
-#[derive(Parser)]
+#[derive(Parser, Clone)]
 pub struct ReportArgs {
     #[arg(help = "Report title")]
     pub title: String,
