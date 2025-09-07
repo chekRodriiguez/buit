@@ -15,6 +15,30 @@ fn init_terminal() {
         let _ = enable_ansi_support::enable_ansi_support();
     }
 }
+
+fn print_info_box() {
+    let content = format!(
+        "{}\n{}\n{}\n{}\n{}\n\n{} {} {}\n{} {} {}\n{} {} {}\n{} {} {}",
+        "╔═══════════════════════════════════════════════╗".cyan().bold(),
+        "║        Buu Undercover Intelligence Toolkit    ║".cyan().bold(),
+        "║         Advanced OSINT Security Framework     ║".green().bold(),
+        "║        For Authorized Security Testing Only   ║".yellow(),
+        "╚═══════════════════════════════════════════════╝".cyan().bold(),
+        "📧".red(),
+        "Copyright ©".white(),
+        "BuuDevOff - Open-Source Project".cyan().bold(),
+        "🌟".yellow(),
+        "Like this tool? Star the repo:".white(),
+        "https://github.com/BuuDevOff/BUIT".blue().underline(),
+        "🚀".green(),
+        "Share with the community &".white(),
+        "contribute!".green().bold(),
+        "💡".yellow(),
+        "Help & Usage:".white(),
+        "buit --help (built-in documentation)".cyan()
+    );
+    println!("{}", content);
+}
 #[tokio::main]
 async fn main() -> Result<()> {
     init_terminal();
@@ -24,16 +48,7 @@ async fn main() -> Result<()> {
     if let Some(text) = buit_text {
         println!("{}", text.to_string().magenta().bold());
     }
-    println!("{}", "╔═══════════════════════════════════════════════╗".cyan().bold());
-    println!("{}", "║        Buu Undercover Intelligence Toolkit    ║".cyan().bold());
-    println!("{}", "║         Advanced OSINT Security Framework     ║".green().bold());
-    println!("{}", "║        For Authorized Security Testing Only   ║".yellow());
-    println!("{}", "╚═══════════════════════════════════════════════╝".cyan().bold());
-    println!("");
-    println!("{} {} {}", "📧".red(), "Copyright ©".white(), "BuuDevOff - Open-Source Project".cyan().bold());
-    println!("{} {} {}", "🌟".yellow(), "Like this tool? Star the repo:".white(), "https://github.com/BuuDevOff/BUIT".blue().underline());
-    println!("{} {} {}", "🚀".green(), "Share with the community &".white(), "contribute!".green().bold());
-    println!("{} {} {}", "💡".yellow(), "Help & Usage:".white(), "buit --help (built-in documentation)".cyan());
+    print_info_box();
     println!();
     if let Err(e) = setup::check_and_setup() {
         eprintln!("Setup error: {}", e);
