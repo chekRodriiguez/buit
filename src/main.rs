@@ -20,9 +20,9 @@ fn print_info_box() {
     let content = format!(
         "{}\n{}\n{}\n{}\n{}\n\n{} {} {}\n{} {} {}\n{} {} {}\n{} {} {}",
         "╔═══════════════════════════════════════════════╗".cyan().bold(),
-        "║        Buu Undercover Intelligence Toolkit    ║".cyan().bold(),
-        "║         Advanced OSINT Security Framework     ║".green().bold(),
-        "║        For Authorized Security Testing Only   ║".yellow(),
+        "║      Buu Undercover Intelligence Toolkit      ║".cyan().bold(),
+        "║       Advanced OSINT Security Framework       ║".green().bold(),
+        "║      For Authorized Security Testing Only     ║".yellow(),
         "╚═══════════════════════════════════════════════╝".cyan().bold(),
         "📧".red(),
         "Copyright ©".white(),
