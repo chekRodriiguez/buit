@@ -1,0 +1,303 @@
+use clap::{Parser, Subcommand};
+#[derive(Parser)]
+#[command(name = "buit")]
+#[command(author = "BuuDevOff <buudevoff@example.com>")]
+#[command(version = "1.0.2")]
+#[command(about = "BUIT - Buu Undercover Intelligence Toolkit - Advanced OSINT framework for security professionals", long_about = "BUIT is a comprehensive Open Source Intelligence (OSINT) toolkit designed for security professionals, researchers, and ethical hackers. This tool provides advanced reconnaissance capabilities for authorized security testing and investigations.
+
+🌟 Star the repo: https://github.com/BuuDevOff/BUIT
+🚀 Contribute: https://github.com/BuuDevOff/BUIT
+💡 Each module has detailed help: buit <module> --help")]
+pub struct Cli {
+    #[command(subcommand)]
+    pub command: Commands,
+}
+#[derive(Subcommand)]
+pub enum Commands {
+    #[command(about = "Search for usernames across platforms")]
+    Username(UsernameArgs),
+    #[command(about = "Check email addresses across services")]
+    Email(EmailArgs),
+    #[command(about = "Search using various search engines")]
+    Search(SearchArgs),
+    #[command(about = "Perform dork searches")]
+    Dork(DorkArgs),
+    #[command(about = "Social media reconnaissance")]
+    Social(SocialArgs),
+    #[command(about = "Manage configuration and API keys")]
+    Config(ConfigArgs),
+    #[command(about = "Phone number lookup")]
+    Phone(PhoneArgs),
+    #[command(about = "IP address analysis")]
+    Ip(IpArgs),
+    #[command(about = "Domain analysis")]
+    Domain(DomainArgs),
+    #[command(about = "Check for data leaks")]
+    Leaks(LeaksArgs),
+    #[command(about = "Extract metadata from files")]
+    Metadata(MetadataArgs),
+    #[command(about = "Enumerate subdomains")]
+    Subdomain(SubdomainArgs),
+    #[command(about = "Shodan search")]
+    Shodan(ShodanArgs),
+    #[command(about = "Port scanning")]
+    Portscan(PortscanArgs),
+    #[command(about = "WHOIS lookup")]
+    Whois(WhoisArgs),
+    #[command(about = "Reverse image search")]
+    ReverseImage(ReverseImageArgs),
+    #[command(about = "GitHub OSINT")]
+    Github(GithubArgs),
+    #[command(about = "Hash identification and cracking")]
+    Hash(HashArgs),
+    #[command(about = "URL scanning")]
+    Urlscan(UrlscanArgs),
+    #[command(about = "Wayback Machine lookup")]
+    Wayback(WaybackArgs),
+    #[command(about = "GeoIP location")]
+    Geoip(GeoipArgs),
+    #[command(about = "Generate report")]
+    Report(ReportArgs),
+    #[command(about = "Interactive mode")]
+    Interactive,
+    #[command(about = "Setup BUIT installation")]
+    Setup,
+}
+#[derive(Parser)]
+pub struct UsernameArgs {
+    #[arg(help = "Username to search for")]
+    pub username: String,
+    #[arg(short, long, help = "Output format (json, csv, text)", default_value = "text")]
+    pub format: String,
+    #[arg(short, long, help = "Output file")]
+    pub output: Option<String>,
+    #[arg(short, long, help = "Platforms to search (comma-separated)")]
+    pub platforms: Option<String>,
+}
+#[derive(Parser)]
+pub struct EmailArgs {
+    #[arg(help = "Email address to check")]
+    pub email: String,
+    #[arg(short, long, help = "Check for data breaches")]
+    pub breaches: bool,
+    #[arg(short, long, help = "Check social media accounts")]
+    pub social: bool,
+    #[arg(short, long, help = "Output format (json, csv, text)", default_value = "text")]
+    pub format: String,
+}
+#[derive(Parser)]
+pub struct SearchArgs {
+    #[arg(help = "Search query")]
+    pub query: String,
+    #[arg(short, long, help = "Search engine (duckduckgo, google, bing)", default_value = "duckduckgo")]
+    pub engine: String,
+    #[arg(short, long, help = "Number of results", default_value = "20")]
+    pub limit: usize,
+    #[arg(short, long, help = "Include deep web results")]
+    pub deep: bool,
+}
+#[derive(Parser)]
+pub struct DorkArgs {
+    #[arg(help = "Dork query")]
+    pub query: String,
+    #[arg(short, long, help = "Target domain")]
+    pub domain: Option<String>,
+    #[arg(short, long, help = "File type to search")]
+    pub filetype: Option<String>,
+    #[arg(short, long, help = "Search in URL")]
+    pub inurl: Option<String>,
+    #[arg(short, long, help = "Search in title")]
+    pub intitle: Option<String>,
+}
+#[derive(Parser)]
+pub struct SocialArgs {
+    #[arg(help = "Target identifier (username, email, or phone)")]
+    pub target: String,
+    #[arg(short, long, help = "Type of identifier (username, email, phone)", default_value = "username")]
+    pub id_type: String,
+    #[arg(short, long, help = "Platforms to search (comma-separated)")]
+    pub platforms: Option<String>,
+    #[arg(short, long, help = "Include profile analysis")]
+    pub analyze: bool,
+}
+#[derive(Parser)]
+pub struct ConfigArgs {
+    #[command(subcommand)]
+    pub action: ConfigAction,
+}
+#[derive(Subcommand)]
+pub enum ConfigAction {
+    #[command(about = "Set an API key")]
+    SetKey {
+        #[arg(help = "Service name")]
+        service: String,
+        #[arg(help = "API key")]
+        key: String,
+    },
+    #[command(about = "Set proxy configuration")]
+    SetProxy {
+        #[arg(help = "Proxy URL (e.g., http://proxy.example.com:8080)")]
+        url: String,
+        #[arg(short, long, help = "Proxy username")]
+        username: Option<String>,
+        #[arg(short, long, help = "Proxy password")]
+        password: Option<String>,
+    },
+    #[command(about = "Set user agent")]
+    SetUserAgent {
+        #[arg(help = "User agent preset (chrome, firefox, safari, edge, mobile, bot) or custom string")]
+        agent: String,
+    },
+    #[command(about = "Set thread count")]
+    SetThreads {
+        #[arg(help = "Number of threads")]
+        count: usize,
+    },
+    #[command(about = "List configured services")]
+    List,
+    #[command(about = "Test API keys")]
+    Test {
+        #[arg(help = "Service to test")]
+        service: Option<String>,
+    },
+}
+#[derive(Parser)]
+pub struct PhoneArgs {
+    #[arg(help = "Phone number to lookup")]
+    pub number: String,
+    #[arg(short, long, help = "Include carrier information")]
+    pub carrier: bool,
+    #[arg(short, long, help = "Output format")]
+    pub format: Option<String>,
+}
+#[derive(Parser)]
+pub struct IpArgs {
+    #[arg(help = "IP address to analyze")]
+    pub ip: String,
+    #[arg(short, long, help = "Include reverse DNS")]
+    pub reverse: bool,
+    #[arg(short, long, help = "Include ASN information")]
+    pub asn: bool,
+    #[arg(short, long, help = "Include geolocation")]
+    pub geo: bool,
+}
+#[derive(Parser)]
+pub struct DomainArgs {
+    #[arg(help = "Domain to analyze")]
+    pub domain: String,
+    #[arg(short, long, help = "Include DNS records")]
+    pub dns: bool,
+    #[arg(short, long, help = "Include SSL certificate info")]
+    pub ssl: bool,
+    #[arg(short, long, help = "Include WHOIS information")]
+    pub whois: bool,
+}
+#[derive(Parser)]
+pub struct LeaksArgs {
+    #[arg(help = "Email or username to check")]
+    pub target: String,
+    #[arg(long, help = "Check HaveIBeenPwned")]
+    pub hibp: bool,
+    #[arg(short, long, help = "Include password dumps")]
+    pub passwords: bool,
+}
+#[derive(Parser)]
+pub struct MetadataArgs {
+    #[arg(help = "File path to extract metadata from")]
+    pub file: String,
+    #[arg(short, long, help = "Output format")]
+    pub format: Option<String>,
+}
+#[derive(Parser)]
+pub struct SubdomainArgs {
+    #[arg(help = "Domain to enumerate subdomains")]
+    pub domain: String,
+    #[arg(short, long, help = "Use certificate transparency")]
+    pub crt: bool,
+    #[arg(short, long, help = "Use DNS brute force")]
+    pub brute: bool,
+    #[arg(long, help = "Skip availability testing for faster results")]
+    pub skip_alive_check: bool,
+}
+#[derive(Parser)]
+pub struct ShodanArgs {
+    #[arg(help = "Search query")]
+    pub query: String,
+    #[arg(short, long, help = "Number of results")]
+    pub limit: Option<usize>,
+    #[arg(short, long, help = "Include vulnerability info")]
+    pub vulns: bool,
+}
+#[derive(Parser)]
+pub struct PortscanArgs {
+    #[arg(help = "Target IP or hostname")]
+    pub target: String,
+    #[arg(short, long, help = "Port range (e.g., 1-1000)")]
+    pub ports: Option<String>,
+    #[arg(short, long, help = "Scan type (tcp, udp)")]
+    pub scan_type: Option<String>,
+}
+#[derive(Parser)]
+pub struct WhoisArgs {
+    #[arg(help = "Domain or IP to lookup")]
+    pub target: String,
+    #[arg(short, long, help = "Parse output")]
+    pub parse: bool,
+}
+#[derive(Parser)]
+pub struct ReverseImageArgs {
+    #[arg(help = "Image URL or file path")]
+    pub image: String,
+    #[arg(short, long, help = "Search engines to use")]
+    pub engines: Option<String>,
+}
+#[derive(Parser)]
+pub struct GithubArgs {
+    #[arg(help = "GitHub username or organization")]
+    pub target: String,
+    #[arg(short, long, help = "Search for secrets")]
+    pub secrets: bool,
+    #[arg(short, long, help = "Include repositories")]
+    pub repos: bool,
+}
+#[derive(Parser)]
+pub struct HashArgs {
+    #[arg(help = "Hash to identify or crack")]
+    pub hash: String,
+    #[arg(short, long, help = "Identify hash type")]
+    pub identify: bool,
+    #[arg(short, long, help = "Attempt to crack")]
+    pub crack: bool,
+}
+#[derive(Parser)]
+pub struct UrlscanArgs {
+    #[arg(help = "URL to scan")]
+    pub url: String,
+    #[arg(short, long, help = "Include screenshot")]
+    pub screenshot: bool,
+}
+#[derive(Parser)]
+pub struct WaybackArgs {
+    #[arg(help = "URL to lookup")]
+    pub url: String,
+    #[arg(short, long, help = "Year filter")]
+    pub year: Option<String>,
+    #[arg(short, long, help = "Limit results")]
+    pub limit: Option<usize>,
+}
+#[derive(Parser)]
+pub struct GeoipArgs {
+    #[arg(help = "IP address to geolocate")]
+    pub ip: String,
+    #[arg(short, long, help = "Include ISP information")]
+    pub isp: bool,
+}
+#[derive(Parser)]
+pub struct ReportArgs {
+    #[arg(help = "Report title")]
+    pub title: String,
+    #[arg(short, long, help = "Output format (html, markdown, pdf)")]
+    pub format: Option<String>,
+    #[arg(short, long, help = "Output file")]
+    pub output: Option<String>,
+}
