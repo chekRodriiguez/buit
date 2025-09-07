@@ -1,0 +1,206 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Report - OSINT Report</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+        }
+        .meta {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .summary-item {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .summary-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .section {
+            background: white;
+            margin-bottom: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .section-header {
+            background: #667eea;
+            color: white;
+            padding: 20px;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        .section-content {
+            padding: 20px;
+        }
+        .finding {
+            border-left: 4px solid #ddd;
+            padding: 15px;
+            margin: 15px 0;
+            background: #f9f9f9;
+        }
+        .finding.info { border-left-color: #3498db; }
+        .finding.success { border-left-color: #2ecc71; }
+        .finding.warning { border-left-color: #f39c12; }
+        .finding.error { border-left-color: #e74c3c; }
+        .finding h4 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        .finding p {
+            margin: 5px 0;
+            color: #666;
+        }
+        .recommendations {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .recommendations h3 {
+            color: #667eea;
+            margin-top: 0;
+        }
+        .recommendations ul {
+            list-style: none;
+            padding: 0;
+        }
+        .recommendations li {
+            padding: 10px;
+            margin: 5px 0;
+            background: #f8f9fa;
+            border-left: 4px solid #f39c12;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Security Report</h1>
+        <p>OSINT Security Report</p>
+    </div>
+    
+    <div class="meta">
+        <p><strong>Generated:</strong> 2025-09-07 12:14:13 UTC</p>
+        <p><strong>Tool:</strong> BUIT - Buu Undercover Intelligence Toolkit v1.0.2</p>
+        <p><strong>Duration:</strong> 4 minutes 32 seconds</p>
+    </div>
+    
+    <div class="summary">
+        <div class="summary-item">
+            <div class="summary-number">15</div>
+            <div>Total Checks</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-number">12</div>
+            <div>Successful</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-number">2</div>
+            <div>Warnings</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-number">1</div>
+            <div>Errors</div>
+        </div>
+    </div>
+    
+    <div class="section">
+        <div class="section-header">Domain Analysis</div>
+        <div class="section-content">
+            <div class="finding info">
+                <h4>SSL Certificate</h4>
+                <p><strong>Valid SSL certificate found</strong></p>
+                <p>Certificate expires in 85 days</p>
+            </div>
+            <div class="finding warning">
+                <h4>DNS Configuration</h4>
+                <p><strong>Missing SPF record</strong></p>
+                <p>No SPF record found, emails may be marked as spam</p>
+            </div>
+        </div>
+    </div>
+    <div class="section">
+        <div class="section-header">Port Scan Results</div>
+        <div class="section-content">
+            <div class="finding info">
+                <h4>Open Ports</h4>
+                <p><strong>3 open ports detected</strong></p>
+                <p>Ports 22, 80, 443 are open</p>
+            </div>
+            <div class="finding success">
+                <h4>Security</h4>
+                <p><strong>No dangerous ports exposed</strong></p>
+                <p>Common administrative ports are properly secured</p>
+            </div>
+        </div>
+    </div>
+    <div class="section">
+        <div class="section-header">Subdomain Enumeration</div>
+        <div class="section-content">
+            <div class="finding info">
+                <h4>Subdomains Found</h4>
+                <p><strong>8 subdomains discovered</strong></p>
+                <p>www, api, mail, ftp, admin, dev, staging, cdn</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="recommendations">
+        <h3>🔍 Recommendations</h3>
+        <ul>
+            <li>Configure SPF record for better email deliverability</li>
+            <li>Consider implementing DMARC policy</li>
+            <li>Review subdomain security policies</li>
+            <li>Monitor SSL certificate expiration dates</li>
+        </ul>
+    </div>
+    
+    <div class="footer">
+        <p>Report generated by BUIT (Buu Undercover Intelligence Toolkit)</p>
+        <p>For authorized security testing and research purposes only</p>
+    </div>
+</body>
+</html>

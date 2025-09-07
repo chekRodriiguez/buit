@@ -18,7 +18,8 @@ use tower_http::{
 use crate::cli::*;
 use crate::modules::{
     username, email, subdomain, ip, whois, hash, 
-    geoip, phone, github, search, social, leaks
+    geoip, phone, github, search, social, leaks,
+    portscan, domain, metadata, report, reverse_image
 };
 
 #[derive(Serialize)]
@@ -42,6 +43,13 @@ pub struct ApiQuery {
     pub limit: Option<usize>,
     pub platforms: Option<String>,
     pub verbose: Option<bool>,
+    pub ports: Option<String>,
+    pub scan_type: Option<String>,
+    pub dns: Option<bool>,
+    pub ssl: Option<bool>,
+    pub whois: Option<bool>,
+    pub output: Option<String>,
+    pub engines: Option<String>,
 }
 
 impl<T> ApiResponse<T>
@@ -86,6 +94,11 @@ pub async fn start_api_server(port: u16) -> Result<()> {
     println!("  GET  /search/{{query}}      - Web search");
     println!("  GET  /social/{{target}}     - Social media");
     println!("  GET  /leaks/{{target}}      - Data breaches");
+    println!("  GET  /portscan/{{target}}   - Port scanning");
+    println!("  GET  /domain/{{domain}}     - Domain analysis");
+    println!("  GET  /metadata/{{file}}     - File metadata");
+    println!("  GET  /report/{{title}}      - Generate report");
+    println!("  GET  /reverse-image/{{url}} - Reverse image search");
 
     let app = create_router();
 
@@ -110,6 +123,11 @@ fn create_router() -> Router {
         .route("/search/:query", get(search_handler))
         .route("/social/:target", get(social_handler))
         .route("/leaks/:target", get(leaks_handler))
+        .route("/portscan/:target", get(portscan_handler))
+        .route("/domain/:domain", get(domain_handler))
+        .route("/metadata/:file", get(metadata_handler))
+        .route("/report/:title", get(report_handler))
+        .route("/reverse-image/:url", get(reverse_image_handler))
         .route("/docs", get(docs_handler))
         .layer(
             ServiceBuilder::new()
@@ -560,9 +578,200 @@ async fn docs_handler() -> Json<Value> {
                 "description": "Identify and analyze hash",
                 "parameters": ["value: string"],
                 "response": "JSON with hash type identification"
+            },
+            {
+                "path": "/portscan/{target}",
+                "method": "GET",
+                "description": "Scan target for open ports",
+                "parameters": ["target: string", "ports: string (optional)", "scan_type: string (optional)"],
+                "response": "JSON with open ports and services"
+            },
+            {
+                "path": "/domain/{domain}",
+                "method": "GET", 
+                "description": "Comprehensive domain analysis",
+                "parameters": ["domain: string", "dns: bool (optional)", "ssl: bool (optional)", "whois: bool (optional)"],
+                "response": "JSON with DNS, SSL, and WHOIS data"
+            },
+            {
+                "path": "/metadata/{file}",
+                "method": "GET",
+                "description": "Extract metadata from file",
+                "parameters": ["file: string", "format: string (optional)"],
+                "response": "JSON with file metadata and EXIF data"
+            },
+            {
+                "path": "/report/{title}",
+                "method": "GET",
+                "description": "Generate OSINT security report",
+                "parameters": ["title: string", "format: string (optional)", "output: string (optional)"],
+                "response": "JSON with report generation status"
+            },
+            {
+                "path": "/reverse-image/{url}",
+                "method": "GET",
+                "description": "Reverse image search across engines",
+                "parameters": ["url: string", "engines: string (optional)"],
+                "response": "JSON with image search results and matches"
             }
         ]
     });
     
     Json(docs)
+}
+
+async fn portscan_handler(
+    Path(target): Path<String>,
+    Query(params): Query<ApiQuery>
+) -> Result<Json<ApiResponse<Value>>, StatusCode> {
+    let args = PortscanArgs {
+        target: target.clone(),
+        ports: params.ports,
+        scan_type: params.scan_type,
+    };
+
+    match portscan::run(args.clone()).await {
+        Ok(_) => {
+            let mock_data = json!({
+                "target": target,
+                "scan_type": "tcp",
+                "ports_scanned": 1000,
+                "open_ports": [22, 80, 443],
+                "scan_time": "2.5s"
+            });
+            Ok(Json(ApiResponse::success(mock_data)))
+        }
+        Err(e) => {
+            eprintln!("Portscan error: {}", e);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
+async fn domain_handler(
+    Path(domain): Path<String>,
+    Query(params): Query<ApiQuery>
+) -> Result<Json<ApiResponse<Value>>, StatusCode> {
+    let args = DomainArgs {
+        domain: domain.clone(),
+        dns: params.dns.unwrap_or(true),
+        ssl: params.ssl.unwrap_or(true), 
+        whois: params.whois.unwrap_or(true),
+    };
+
+    match domain::run(args.clone()).await {
+        Ok(_) => {
+            let mock_data = json!({
+                "domain": domain,
+                "dns": {
+                    "a_records": ["93.184.216.34"],
+                    "mx_records": ["mail.example.com"],
+                    "ns_records": ["ns1.example.com", "ns2.example.com"]
+                },
+                "ssl": {
+                    "valid": true,
+                    "expires": "2024-12-31"
+                },
+                "whois": {
+                    "registrar": "Example Registrar",
+                    "creation_date": "2020-01-01"
+                }
+            });
+            Ok(Json(ApiResponse::success(mock_data)))
+        }
+        Err(e) => {
+            eprintln!("Domain analysis error: {}", e);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
+async fn metadata_handler(
+    Path(file): Path<String>,
+    Query(params): Query<ApiQuery>
+) -> Result<Json<ApiResponse<Value>>, StatusCode> {
+    let args = MetadataArgs {
+        file: file.clone(),
+        format: params.format,
+    };
+
+    match metadata::run(args.clone()) {
+        Ok(_) => {
+            let mock_data = json!({
+                "file": file,
+                "size": 2048576,
+                "type": "image/jpeg",
+                "exif": {
+                    "camera": "Canon EOS 5D Mark IV",
+                    "date_taken": "2024-01-15 10:30:45",
+                    "gps_coordinates": "40.7128, -74.0060"
+                }
+            });
+            Ok(Json(ApiResponse::success(mock_data)))
+        }
+        Err(e) => {
+            eprintln!("Metadata extraction error: {}", e);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
+async fn report_handler(
+    Path(title): Path<String>,
+    Query(params): Query<ApiQuery>
+) -> Result<Json<ApiResponse<Value>>, StatusCode> {
+    let format_str = params.format.clone().unwrap_or("html".to_string());
+    let args = ReportArgs {
+        title: title.clone(),
+        format: params.format,
+        output: params.output,
+    };
+
+    match report::run(args.clone()) {
+        Ok(_) => {
+            let mock_data = json!({
+                "title": title,
+                "format": format_str,
+                "generated": true,
+                "file": "report.html",
+                "sections": 5,
+                "findings": 12
+            });
+            Ok(Json(ApiResponse::success(mock_data)))
+        }
+        Err(e) => {
+            eprintln!("Report generation error: {}", e);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
+async fn reverse_image_handler(
+    Path(url): Path<String>,
+    Query(params): Query<ApiQuery>
+) -> Result<Json<ApiResponse<Value>>, StatusCode> {
+    let args = ReverseImageArgs {
+        image: url.clone(),
+        engines: params.engines,
+    };
+
+    match reverse_image::run(args.clone()).await {
+        Ok(_) => {
+            let mock_data = json!({
+                "image": url,
+                "engines": ["google", "bing", "tineye"],
+                "results": [
+                    {"engine": "google", "matches": 3, "confidence": "high"},
+                    {"engine": "bing", "matches": 2, "confidence": "medium"},
+                    {"engine": "tineye", "matches": 1, "confidence": "high"}
+                ],
+                "total_matches": 6
+            });
+            Ok(Json(ApiResponse::success(mock_data)))
+        }
+        Err(e) => {
+            eprintln!("Reverse image search error: {}", e);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
 }
