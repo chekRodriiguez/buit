@@ -37,6 +37,4 @@ config.toml
 *.temp
 
 # Claude AI files
-.claude/
-.claude/*
-.claude
+/.claude/
