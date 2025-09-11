@@ -190,12 +190,12 @@ pub struct PhoneArgs {
 pub struct IpArgs {
     #[arg(help = "IP address to analyze")]
     pub ip: String,
-    #[arg(short, long, help = "Include reverse DNS")]
-    pub reverse: bool,
-    #[arg(short, long, help = "Include ASN information")]
-    pub asn: bool,
-    #[arg(short, long, help = "Include geolocation")]
-    pub geo: bool,
+    #[arg(long, help = "Skip reverse DNS lookup", action = clap::ArgAction::SetTrue)]
+    pub no_reverse: bool,
+    #[arg(long, help = "Skip ASN information", action = clap::ArgAction::SetTrue)]
+    pub no_asn: bool,
+    #[arg(long, help = "Skip geolocation", action = clap::ArgAction::SetTrue)]
+    pub no_geo: bool,
 }
 #[derive(Parser, Clone)]
 pub struct DomainArgs {
