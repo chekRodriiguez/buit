@@ -40,3 +40,4 @@ config.toml
 /.claude/
 
 /release/
+/releases/
