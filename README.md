@@ -25,7 +25,7 @@
 
 ## ✨ What is BUIT?
 
-**BUIT** is a comprehensive **Open Source Intelligence (OSINT)** toolkit designed for security professionals, researchers, and ethical hackers. Combine **20+ reconnaissance modules** into a single, lightning-fast command-line tool.
+**BUIT** is a comprehensive **Open Source Intelligence (OSINT)** toolkit designed for security professionals, researchers, and ethical hackers. Combine **25+ reconnaissance modules** into a single, lightning-fast command-line tool with **enhanced IP analysis** and **complete API results**.
 
 ## 🚀 Quick Install
 
@@ -41,16 +41,36 @@
 
 ### 🪟 Windows
 ```powershell
-# Download and run - BUIT installs itself automatically!
-Expand-Archive buit-v1.0.1-windows-x86_64-autosetup.zip
-.\buit.exe --help
+# Download latest v1.0.4 release
+# For Windows x64:
+Expand-Archive buit-v1.0.4-windows-x64.zip
+.\buit-windows-x64.exe --help
+
+# For Windows x86:
+Expand-Archive buit-v1.0.4-windows-x86.zip
+.\buit-windows-x86.exe --help
 ```
 
-### 🍎 macOS / 🐧 Linux
+### 🍎 macOS
 ```bash
-# One-liner install with auto-setup
-curl -L https://github.com/BuuDevOff/BUIT/releases/latest/download/buit-v1.0.1-macos-universal-autosetup.tar.gz | tar -xz
-./buit --help
+# Intel Mac (x64)
+curl -L https://github.com/BuuDevOff/BUIT/releases/download/v1.0.4/buit-v1.0.4-macos-x64.tar.gz | tar -xz
+./buit-macos-x64 --help
+
+# Apple Silicon (ARM64)
+curl -L https://github.com/BuuDevOff/BUIT/releases/download/v1.0.4/buit-v1.0.4-macos-arm64.tar.gz | tar -xz
+./buit-macos-arm64 --help
+```
+
+### 🐧 Linux
+```bash
+# Linux x64
+curl -L https://github.com/BuuDevOff/BUIT/releases/download/v1.0.4/buit-v1.0.4-linux-x64.tar.gz | tar -xz
+./buit-linux-x64 --help
+
+# Linux ARM64
+curl -L https://github.com/BuuDevOff/BUIT/releases/download/v1.0.4/buit-v1.0.4-linux-arm64.tar.gz | tar -xz
+./buit-linux-arm64 --help
 ```
 
 ### 🛠️ Build from Source
@@ -94,8 +114,8 @@ buit hash 5d41402abc4b2a76b9719d911017c592 --identify
 # 🕷️ Subdomain enumeration
 buit subdomain example.com --crt --brute
 
-# 🌍 IP geolocation & analysis
-buit ip 8.8.8.8 --geo --asn --reverse
+# 🌍 Complete IP analysis (now with full details by default!)
+buit ip 8.8.8.8
 
 # 🌐 Website technology stack
 buit urlscan https://example.com --screenshot
@@ -107,6 +127,30 @@ buit wayback https://example.com --year 2020
 </details>
 
 💡 **Pro tip**: Use `buit <module> --help` for detailed options on any module!
+
+<details>
+<summary><strong>🚀 NEW in v1.0.4 - Enhanced API Server</strong></summary>
+
+```bash
+# 🌐 Start API server with complete results
+buit --api --port 3000
+
+# 🔍 Get real IP analysis data (not just success messages!)
+curl "http://localhost:3000/ip/8.8.8.8"
+# Returns: {"success": true, "data": {"ip": "8.8.8.8", "reverse_dns": "dns.google", "asn": {"number": "AS15169", "organization": "Google LLC"}, ...}}
+
+# 📊 All modules now return actual analysis results via API
+curl "http://localhost:3000/domain/example.com"
+curl "http://localhost:3000/email/test@example.com"
+```
+
+**What's New:**
+- ✅ **Complete Results**: APIs now return actual analysis data instead of generic messages
+- ✅ **Enhanced IP Analysis**: Full geolocation, ASN, and reverse DNS by default
+- ✅ **Better Accuracy**: Multiple API fallbacks for reliable data sources
+- ✅ **Structured Data**: JSON responses with all details for integration
+
+</details>
 
 ## 🔧 Available Modules
 
@@ -173,7 +217,7 @@ buit config list
 
 | 🚀 **Performance** | 🛡️ **Reliability** | 🔧 **Flexibility** |
 |:------------------|:------------------|:-------------------|
-| ⚡ **Blazing Fast** - Rust-powered for maximum speed | 🔒 **Robust** - Enterprise-grade error handling | 🎯 **20+ Modules** - Complete OSINT toolkit |
+| ⚡ **Blazing Fast** - Rust-powered for maximum speed | 🔒 **Robust** - Enterprise-grade error handling | 🎯 **25+ Modules** - Complete OSINT toolkit |
 | 🔄 **Multi-threaded** - Parallel processing capabilities | 🛠️ **Fallback Systems** - Never leaves you hanging | ⚙️ **Configurable** - Adapt to your workflow |
 | 📊 **Optimized** - Memory efficient and resource-aware | 🔍 **Tested** - Battle-tested in real scenarios | 🌍 **Cross-platform** - Windows, macOS, Linux |
 
@@ -245,6 +289,82 @@ Always ensure proper authorization before conducting reconnaissance activities.
 **The developers assume no responsibility for misuse of this software.**
 
 </div>
+
+## 🆕 What's New in v1.0.4
+
+<div align="center">
+
+**🔥 Major Enhancements - Enhanced IP Analysis & Complete API Results**
+
+</div>
+
+<details>
+<summary><strong>🌍 Enhanced IP Analysis</strong></summary>
+
+**Complete Analysis by Default:**
+```bash
+# Before v1.0.4: Required manual flags
+buit ip 8.8.8.8 --reverse --asn --geo
+
+# v1.0.4+: Everything enabled by default!  
+buit ip 8.8.8.8
+```
+
+**New Features:**
+- ✅ **Auto-enabled**: Reverse DNS, ASN, and geolocation data shown automatically
+- ✅ **Accurate ISP Detection**: Multiple API fallbacks (hackertarget.com → ipinfo.io → ipapi.co)
+- ✅ **Better Data Quality**: Fixed ASN parsing with correct CSV format handling
+- ✅ **Real-time Accuracy**: No more demo/fake data when APIs fail
+
+</details>
+
+<details>
+<summary><strong>🚀 Complete API Results</strong></summary>
+
+**Before v1.0.4:**
+```json
+{
+  "success": true,
+  "data": {
+    "ip": "8.8.8.8",
+    "message": "IP analysis completed successfully",
+    "note": "Detailed results available via CLI"
+  }
+}
+```
+
+**v1.0.4+ Returns Real Data:**
+```json
+{
+  "success": true,
+  "data": {
+    "ip": "8.8.8.8",
+    "valid": true,
+    "version": "IPv4",
+    "reverse_dns": "dns.google",
+    "asn": {
+      "number": "AS15169",
+      "organization": "Google LLC",
+      "country": "US"
+    },
+    "geolocation": {
+      "country": "United States",
+      "city": "Mountain View",
+      "region": "California",
+      "latitude": 37.4056,
+      "longitude": -122.0785
+    }
+  }
+}
+```
+
+**Benefits:**
+- 🎯 **Integration-Ready**: Use API responses directly in your applications
+- 📊 **Complete Data**: All analysis results available via REST API
+- 🔄 **Consistent Format**: Structured JSON responses across all modules
+- ⚡ **No More Console Scraping**: Direct programmatic access to results
+
+</details>
 
 ## 🚀 Roadmap - Coming Soon
 
