@@ -155,7 +155,7 @@ async fn main() -> Result<()> {
             modules::phone::run(args).await?;
         }
         cli::Commands::Ip(args) => {
-            modules::ip::run(args).await?;
+            let _result = modules::ip::run(args).await?;
         }
         cli::Commands::Domain(args) => {
             modules::domain::run(args).await?;
