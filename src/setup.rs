@@ -2,12 +2,12 @@ use std::env;
 use std::path::PathBuf;
 use std::fs;
 use std::process::Command;
-use colored::*;
+use console::style;
 use dialoguer::{Confirm, Select};
 use anyhow::Result;
 pub async fn force_setup() -> Result<()> {
-    println!("\n{}", "🔧 BUIT Installation Setup".cyan().bold());
-    println!("{}", "══════════════════════════".cyan());
+    println!("\n{}", style("🔧 BUIT Installation Setup").cyan().bold());
+    println!("{}", style("══════════════════════════").cyan());
     offer_auto_setup()?;
     Ok(())
 }
@@ -53,16 +53,16 @@ fn should_offer_setup(current_exe: &PathBuf) -> bool {
     !common_paths.iter().any(|path| exe_str.contains(path))
 }
 fn offer_auto_setup() -> Result<()> {
-    println!("\n{}", "🚀 BUIT First-Time Setup".cyan().bold());
-    println!("{}", "══════════════════════════".cyan());
-    println!("\n{} BUIT is not installed in your system PATH.", "ℹ️".blue());
+    println!("\n{}", style("🚀 BUIT First-Time Setup").cyan().bold());
+    println!("{}", style("══════════════════════════").cyan());
+    println!("\n{} BUIT is not installed in your system PATH.", style("ℹ️").blue());
     println!("Would you like to install it automatically for easier access?");
     if !Confirm::new()
         .with_prompt("Install BUIT to system PATH?")
         .default(true)
         .interact()?
     {
-        println!("\n{} Setup skipped. You can run BUIT from its current location.", "⏭️".yellow());
+        println!("\n{} Setup skipped. You can run BUIT from its current location.", style("⏭️").yellow());
         return Ok(());
     }
     let install_options = get_install_options();
@@ -112,11 +112,11 @@ fn install_to_location(selection: usize) -> Result<()> {
     let binary_name = if cfg!(target_os = "windows") { "buit.exe" } else { "buit" };
     let target_exe = target_dir.join(binary_name);
     fs::copy(&current_exe, &target_exe)?;
-    println!("\n✅ {} installed to: {}", "BUIT".green().bold(), target_dir.display());
+    println!("\n✅ {} installed to: {}", style("BUIT").green().bold(), target_dir.display());
     add_to_windows_path(&target_dir)?;
     println!("\n{} {} {}",
-        "🎉".green(),
-        "Installation complete!".green().bold(),
+        style("🎉").green(),
+        style("Installation complete!").green().bold(),
         "Restart your terminal to use 'buit' from anywhere."
     );
     Ok(())
@@ -148,7 +148,7 @@ fn install_to_location(selection: usize) -> Result<()> {
             .arg(&target_path)
             .status()?;
         if !status.success() {
-            println!("❌ {} Installation failed. Try running with sudo.", "Error:".red());
+            println!("❌ {} Installation failed. Try running with sudo.", style("Error:").red());
             return Ok(());
         }
         Command::new("sudo")
@@ -164,10 +164,10 @@ fn install_to_location(selection: usize) -> Result<()> {
             .status()?;
         add_to_user_path()?;
     }
-    println!("\n✅ {} installed to: {}", "BUIT".green().bold(), target_path.display());
+    println!("\n✅ {} installed to: {}", style("BUIT").green().bold(), target_path.display());
     println!("\n{} {} {}",
-        "🎉".green(),
-        "Installation complete!".green().bold(),
+        style("🎉").green(),
+        style("Installation complete!").green().bold(),
         "You can now run 'buit' from anywhere!"
     );
     Ok(())
@@ -195,7 +195,7 @@ fn add_to_windows_path(dir: &PathBuf) -> Result<()> {
         .output();
     match output {
         Ok(_) => println!("📝 Added to Windows PATH"),
-        Err(_) => println!("⚠️  Please add {} to your PATH manually", dir_str.yellow()),
+        Err(_) => println!("⚠️  Please add {} to your PATH manually", style(dir_str).yellow()),
     }
     Ok(())
 }
@@ -251,9 +251,9 @@ fn add_to_user_path() -> Result<()> {
         }
     }
     if !path_added {
-        println!("⚠️  Please add {} to your PATH manually", local_bin.yellow());
+        println!("⚠️  Please add {} to your PATH manually", style(local_bin).yellow());
         println!("   Add this line to your shell config:");
-        println!("   export PATH=\"$PATH:{}\"", local_bin.cyan());
+        println!("   export PATH=\"$PATH:{}\"", style(local_bin).cyan());
     } else {
         println!("🔄 Please restart your terminal or run: source ~/.{}rc",
             if shell.contains("zsh") { "zsh" } else { "bash" }
