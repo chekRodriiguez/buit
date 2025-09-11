@@ -1,7 +1,7 @@
 use super::{Config, UserAgentPreset, ProxyAuth};
 use crate::cli::{ConfigArgs, ConfigAction};
 use anyhow::Result;
-use colored::*;
+use console::style;
 
 pub fn run(args: ConfigArgs) -> Result<()> {
     let mut config = Config::load()?;
@@ -9,7 +9,7 @@ pub fn run(args: ConfigArgs) -> Result<()> {
     match args.action {
         ConfigAction::SetKey { service, key } => {
             config.set_api_key(service.clone(), key)?;
-            println!("{} API key for {} has been saved", "✓".green(), service.cyan());
+            println!("{} API key for {} has been saved", style("✓").green(), style(service).cyan());
         }
         
         ConfigAction::SetProxy { url, username, password } => {
@@ -21,7 +21,7 @@ pub fn run(args: ConfigArgs) -> Result<()> {
                 });
             }
             config.save()?;
-            println!("{} Proxy configuration saved: {}", "✓".green(), url.cyan());
+            println!("{} Proxy configuration saved: {}", style("✓").green(), style(url).cyan());
         }
         
         ConfigAction::SetUserAgent { agent } => {
@@ -31,35 +31,35 @@ pub fn run(args: ConfigArgs) -> Result<()> {
                 "safari" => UserAgentPreset::Safari,
                 "edge" => UserAgentPreset::Edge,
                 "mobile" => UserAgentPreset::Mobile,
-                "bot" => UserAgentPreset::Bot,
+                "osint" => UserAgentPreset::Osint,
                 _ => UserAgentPreset::Custom(agent.clone()),
             };
             config.settings.user_agent_preset = preset.clone();
             config.settings.user_agent = preset.to_string();
             config.save()?;
-            println!("{} User agent updated", "✓".green());
+            println!("{} User agent updated", style("✓").green());
         }
         
         ConfigAction::SetThreads { count } => {
             config.settings.max_threads = count;
             config.save()?;
-            println!("{} Thread count set to {}", "✓".green(), count.to_string().cyan());
+            println!("{} Thread count set to {}", style("✓").green(), style(count.to_string()).cyan());
         }
         
         ConfigAction::List => {
-            println!("{}", "Configured Services:".bold());
-            println!("{}", "═══════════════════".cyan());
+            println!("{}", style("Configured Services:").bold());
+            println!("{}", style("═══════════════════").cyan());
             
             if config.api_keys.is_empty() {
-                println!("{}", "No API keys configured".yellow());
+                println!("{}", style("No API keys configured").yellow());
             } else {
                 for (service, _) in &config.api_keys {
-                    println!("  • {}", service.cyan());
+                    println!("  • {}", style(service).cyan());
                 }
             }
             
-            println!("\n{}", "Settings:".bold());
-            println!("{}", "═════════".cyan());
+            println!("\n{}", style("Settings:").bold());
+            println!("{}", style("═════════").cyan());
             println!("  Timeout: {} seconds", config.settings.timeout);
             println!("  Max Threads: {}", config.settings.max_threads);
             println!("  User Agent Preset: {:?}", config.settings.user_agent_preset);
@@ -77,14 +77,14 @@ pub fn run(args: ConfigArgs) -> Result<()> {
         ConfigAction::Test { service } => {
             if let Some(service_name) = service {
                 if config.api_keys.contains_key(&service_name) {
-                    println!("{} API key for {} is configured", "✓".green(), service_name.cyan());
+                    println!("{} API key for {} is configured", style("✓").green(), style(&service_name).cyan());
                 } else {
-                    println!("{} No API key found for {}", "✗".red(), service_name.cyan());
+                    println!("{} No API key found for {}", style("✗").red(), style(&service_name).cyan());
                 }
             } else {
-                println!("{}", "Testing all configured API keys...".yellow());
+                println!("{}", style("Testing all configured API keys...").yellow());
                 for (service_name, _) in &config.api_keys {
-                    println!("  {} {}", "✓".green(), service_name.cyan());
+                    println!("  {} {}", style("✓").green(), style(service_name).cyan());
                 }
             }
         }

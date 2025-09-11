@@ -31,7 +31,7 @@ pub enum UserAgentPreset {
     Safari,
     Edge,
     Mobile,
-    Bot,
+    Osint,
     Custom(String),
 }
 
@@ -77,8 +77,8 @@ impl UserAgentPreset {
             UserAgentPreset::Mobile => {
                 "Mozilla/5.0 (iPhone; CPU iPhone OS 17_2_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Mobile/15E148 Safari/604.1".to_string()
             }
-            UserAgentPreset::Bot => {
-                "OSINT-Toolkit/1.0 (Security Research Bot)".to_string()
+            UserAgentPreset::Osint => {
+                "BUIT Osint/1.0 (Open source osint toolkit)".to_string()
             }
             UserAgentPreset::Custom(ua) => ua.clone(),
         }
@@ -122,7 +122,7 @@ impl Config {
     fn config_path() -> Result<PathBuf> {
         let mut path = dirs::config_dir()
             .ok_or_else(|| anyhow::anyhow!("Could not find config directory"))?;
-        path.push("osint_toolkit");
+        path.push("buit");
         path.push("config.json");
         Ok(path)
     }
