@@ -23,11 +23,13 @@ impl DnsClient {
         Ok(response.into_iter().map(|name| name.to_string()).collect())
     }
 
+    #[allow(dead_code)]
     pub async fn resolve_a(&self, domain: &str) -> Result<Vec<IpAddr>> {
         let response = self.resolver.lookup_ip(domain).await?;
         Ok(response.into_iter().collect())
     }
 
+    #[allow(dead_code)]
     pub async fn resolve_mx(&self, domain: &str) -> Result<Vec<String>> {
         use trust_dns_resolver::proto::rr::RecordType;
         
@@ -43,6 +45,7 @@ impl DnsClient {
         Ok(mx_records)
     }
 
+    #[allow(dead_code)]
     pub async fn resolve_txt(&self, domain: &str) -> Result<Vec<String>> {
         use trust_dns_resolver::proto::rr::RecordType;
         
