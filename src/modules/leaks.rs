@@ -2,7 +2,7 @@ use crate::cli::LeaksArgs;
 use crate::utils::http::HttpClient;
 use crate::config::Config;
 use anyhow::Result;
-use colored::*;
+use console::style;
 use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LeaksResult {
@@ -26,7 +26,7 @@ pub struct PasswordDump {
     pub hash_type: String,
 }
 pub async fn run(args: LeaksArgs) -> Result<()> {
-    println!("{} Checking leaks for: {}", "💥".cyan(), args.target.yellow().bold());
+    println!("{} Checking leaks for: {}", style("💧").cyan(), style(&args.target).yellow().bold());
     let config = Config::load()?;
     let client = HttpClient::new()?;
     let mut result = LeaksResult {
@@ -36,16 +36,16 @@ pub async fn run(args: LeaksArgs) -> Result<()> {
         total_breaches: 0,
     };
     if args.hibp {
-        println!("\n{} Checking HaveIBeenPwned...", "🔍".cyan());
+        println!("\n{} Checking HaveIBeenPwned...", style("🔍").cyan());
         if config.get_api_key("hibp").is_none() {
-            println!("{} No HaveIBeenPwned API key configured", "⚠".yellow());
-            println!("{} Showing demo data instead...", "ℹ".cyan());
+            println!("{} No HaveIBeenPwned API key configured", style("⚠").yellow());
+            println!("{} Showing demo data instead...", style("ℹ").cyan());
         }
         result.breaches = check_hibp(&client, &args.target).await?;
         result.total_breaches = result.breaches.len();
     }
     if args.passwords {
-        println!("\n{} Checking password dumps...", "🔍".cyan());
+        println!("\n{} Checking password dumps...", style("🔒").cyan());
         result.password_dumps = check_password_dumps(&client, &args.target).await?;
     }
     display_results(&result);
@@ -92,7 +92,7 @@ async fn check_hibp(client: &HttpClient, target: &str) -> Result<Vec<Breach>> {
             }
         }
         Err(_) => {
-            println!("{} Using demo data due to API limitations", "ℹ".cyan());
+            println!("{} Using demo data due to API limitations", style("ℹ").cyan());
             breaches.push(Breach {
                 name: "Adobe".to_string(),
                 date: "2013-10-04".to_string(),
@@ -140,34 +140,34 @@ async fn check_password_dumps(_client: &HttpClient, target: &str) -> Result<Vec<
     Ok(dumps)
 }
 fn display_results(result: &LeaksResult) {
-    println!("\n{}", "Data Breach Results:".green().bold());
-    println!("{}", "═══════════════════".cyan());
-    println!("  {} {}", "Target:".yellow(), result.target.cyan());
-    println!("  {} {}", "Breaches Found:".yellow(), result.total_breaches.to_string().red());
+    println!("\n{}", style("Data Breach Results:").green().bold());
+    println!("{}", style("═══════════════════").cyan());
+    println!("  {} {}", style("Target:").yellow(), style(&result.target).cyan());
+    println!("  {} {}", style("Breaches Found:").yellow(), style(result.total_breaches.to_string()).red());
     if !result.breaches.is_empty() {
-        println!("\n{}", "Breached Services:".red().bold());
+        println!("\n{}", style("Breached Services:").red().bold());
         for breach in &result.breaches {
             println!("  {} {} ({})",
-                "•".red(),
-                breach.name.red().bold(),
-                breach.date.yellow()
+                style("•").red(),
+                style(&breach.name).red().bold(),
+                style(&breach.date).yellow()
             );
-            println!("    Accounts: {}", breach.compromised_accounts.to_string().red());
-            println!("    Data: {}", breach.compromised_data.join(", ").cyan());
-            println!("    Description: {}", breach.description.dimmed());
+            println!("    Accounts: {}", style(breach.compromised_accounts.to_string()).red());
+            println!("    Data: {}", breach.compromised_data.join(", "));
+            println!("    Description: {}", style(&breach.description).dim());
         }
     }
     if !result.password_dumps.is_empty() {
-        println!("\n{}", "⚠ Password Dumps Found:".red().bold());
+        println!("\n{}", style("⚠ Password Dumps Found:").red().bold());
         for dump in &result.password_dumps {
-            println!("  {} {}", "Source:".yellow(), dump.source.red());
-            println!("    Password/Hash: {}", dump.password.red());
-            println!("    Type: {}", dump.hash_type.cyan());
+            println!("  {} {}", style("Source:").yellow(), style(&dump.source).red());
+            println!("    Password/Hash: {}", style(&dump.password).red());
+            println!("    Type: {}", style(&dump.hash_type).cyan());
         }
-        println!("\n{}", "⚠ SECURITY ALERT:".red().bold());
+        println!("\n{}", style("⚠ SECURITY ALERT:").red().bold());
         println!("  This email/username has been found in password dumps!");
         println!("  Consider changing passwords on all accounts.");
     } else if result.breaches.is_empty() {
-        println!("\n{} No breaches found for this target", "✓".green());
+        println!("\n{} No breaches found for this target", style("✓").green());
     }
 }

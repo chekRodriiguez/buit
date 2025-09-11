@@ -1,7 +1,7 @@
 use crate::cli::UrlscanArgs;
 use crate::utils::http::HttpClient;
 use anyhow::Result;
-use colored::*;
+use console::style;
 use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UrlScanResult {
@@ -24,19 +24,19 @@ pub struct SecurityInfo {
     pub phishing_detected: bool,
 }
 pub async fn run(args: UrlscanArgs) -> Result<()> {
-    println!("{} URL scanning: {}", "🔍".cyan(), args.url.yellow().bold());
+    println!("{} URL scanning: {}", style("🔍").cyan(), style(&args.url).yellow().bold());
     let client = HttpClient::new()?;
     let result = scan_url(&client, &args.url, args.screenshot).await?;
     display_results(&result);
     Ok(())
 }
 async fn scan_url(client: &HttpClient, url: &str, include_screenshot: bool) -> Result<UrlScanResult> {
-    println!("\n{} Analyzing URL structure...", "🔍".cyan());
+    println!("\n{} Analyzing URL structure...", style("🔍").cyan());
     let parsed_url = url::Url::parse(url)?;
     let domain = parsed_url.host_str().unwrap_or("unknown");
-    println!("{} Domain: {}", "•".cyan(), domain.yellow());
-    println!("{} Protocol: {}", "•".cyan(), parsed_url.scheme().cyan());
-    println!("\n{} Fetching page content...", "🔍".cyan());
+    println!("{} Domain: {}", style("•").cyan(), style(domain).yellow());
+    println!("{} Protocol: {}", style("•").cyan(), style(parsed_url.scheme()).cyan());
+    println!("\n{} Fetching page content...", style("🔍").cyan());
     let mut result = UrlScanResult {
         url: url.to_string(),
         scan_id: Some(format!("scan_{}", chrono::Utc::now().timestamp())),
@@ -67,10 +67,10 @@ async fn scan_url(client: &HttpClient, url: &str, include_screenshot: bool) -> R
             result.security_info.security_headers = detect_security_headers(&content);
             result.security_info.malware_detected = detect_malware(&content);
             result.security_info.phishing_detected = detect_phishing(&content);
-            println!("{} Page analysis completed", "✓".green());
+            println!("{} Page analysis completed", style("✓").green());
         }
         Err(e) => {
-            println!("{} Failed to fetch page: {}", "⚠".yellow(), e);
+            println!("{} Failed to fetch page: {}", style("⚠").yellow(), e);
             result.status = "failed".to_string();
         }
     }
@@ -139,56 +139,56 @@ fn detect_phishing(html: &str) -> bool {
     phishing_indicators.iter().any(|&indicator| html_lower.contains(indicator))
 }
 fn display_results(result: &UrlScanResult) {
-    println!("\n{}", "URL Scan Results:".green().bold());
-    println!("{}", "══════════════════".cyan());
-    println!("  {} {}", "URL:".yellow(), result.url.cyan());
-    println!("  {} {}", "Status:".yellow(),
+    println!("\n{}", style("URL Scan Results:").green().bold());
+    println!("{}", style("══════════════════").cyan());
+    println!("  {} {}", style("URL:").yellow(), style(&result.url).cyan());
+    println!("  {} {}", style("Status:").yellow(),
         match result.status.as_str() {
-            "completed" => result.status.green(),
-            "failed" => result.status.red(),
-            _ => result.status.yellow(),
+            "completed" => style(&result.status).green(),
+            "failed" => style(&result.status).red(),
+            _ => style(&result.status).yellow(),
         }
     );
     if let Some(scan_id) = &result.scan_id {
-        println!("  {} {}", "Scan ID:".yellow(), scan_id.cyan());
+        println!("  {} {}", style("Scan ID:").yellow(), style(scan_id).cyan());
     }
     if let Some(title) = &result.page_title {
-        println!("  {} {}", "Page Title:".yellow(), title.cyan());
+        println!("  {} {}", style("Page Title:").yellow(), style(title).cyan());
     }
     if let Some(server) = &result.server {
-        println!("  {} {}", "Server:".yellow(), server.cyan());
+        println!("  {} {}", style("Server:").yellow(), style(server).cyan());
     }
     if !result.ip_addresses.is_empty() {
-        println!("\n{}", "IP Addresses:".yellow());
+        println!("\n{}", style("IP Addresses:").yellow());
         for ip in &result.ip_addresses {
-            println!("  • {}", ip.cyan());
+            println!("  • {}", style(ip).cyan());
         }
     }
     if !result.technologies.is_empty() {
-        println!("\n{}", "Technologies Detected:".yellow());
+        println!("\n{}", style("Technologies Detected:").yellow());
         for tech in &result.technologies {
-            println!("  • {}", tech.green());
+            println!("  • {}", style(tech).green());
         }
     }
-    println!("\n{}", "Security Analysis:".yellow().bold());
-    println!("  {} {}", "SSL Valid:".yellow(),
-        if result.security_info.ssl_valid { "✓".green() } else { "✗".red() }
+    println!("\n{}", style("Security Analysis:").yellow().bold());
+    println!("  {} {}", style("SSL Valid:").yellow(),
+        if result.security_info.ssl_valid { style("✓ YES").green() } else { style("✗ NO").red() }
     );
     if !result.security_info.security_headers.is_empty() {
-        println!("  {} {}", "Security Headers:".yellow(),
-            result.security_info.security_headers.join(", ").cyan());
+        println!("  {} {}", style("Security Headers:").yellow(),
+            result.security_info.security_headers.join(", "));
     }
-    println!("  {} {}", "Malware Detected:".yellow(),
-        if result.security_info.malware_detected { "⚠ YES".red() } else { "✓ Clean".green() }
+    println!("  {} {}", style("Malware Detected:").yellow(),
+        if result.security_info.malware_detected { style("⚠ YES").red() } else { style("✓ Clean").green() }
     );
-    println!("  {} {}", "Phishing Detected:".yellow(),
-        if result.security_info.phishing_detected { "⚠ YES".red() } else { "✓ Clean".green() }
+    println!("  {} {}", style("Phishing Detected:").yellow(),
+        if result.security_info.phishing_detected { style("⚠ YES").red() } else { style("✓ Clean").green() }
     );
     if let Some(screenshot_url) = &result.screenshot_url {
-        println!("\n{}", "Screenshot:".yellow());
-        println!("  {}", screenshot_url.blue().underline());
+        println!("\n{}", style("Screenshot:").yellow());
+        println!("  {}", style(screenshot_url).blue().underlined());
     }
-    println!("\n{}", "Additional Tools:".yellow().bold());
+    println!("\n{}", style("Additional Tools:").yellow().bold());
     println!("• VirusTotal: https://www.virustotal.com/gui/url/{}/detection",
         urlencoding::encode(&result.url));
     println!("• URLVoid: https://www.urlvoid.com/scan/{}",

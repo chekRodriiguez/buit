@@ -1,8 +1,10 @@
 use crate::cli::HashArgs;
 use crate::utils::http::HttpClient;
 use anyhow::Result;
-use colored::*;
+use console::style;
 use serde::{Deserialize, Serialize};
+use sha2::{Sha256, Digest as Sha2Digest};
+use blake3;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct HashResult {
     pub hash: String,
@@ -22,7 +24,7 @@ pub struct CrackResult {
     pub method: String,
 }
 pub async fn run(args: HashArgs) -> Result<()> {
-    println!("{} Hash analysis: {}", "🔐".cyan(), args.hash.yellow().bold());
+    println!("{} Hash analysis: {}", style("🔒").cyan(), style(&args.hash).yellow().bold());
     let client = HttpClient::new()?;
     let mut result = HashResult {
         hash: args.hash.clone(),
@@ -30,17 +32,17 @@ pub async fn run(args: HashArgs) -> Result<()> {
         crack_result: None,
     };
     if args.identify {
-        println!("\n{} Identifying hash type...", "🔍".cyan());
+        println!("\n{} Identifying hash type...", style("🔍").cyan());
         result.identified_types = identify_hash(&args.hash);
         display_hash_types(&result.identified_types);
     }
     if args.crack {
-        println!("\n{} Attempting to crack hash...", "💥".cyan());
+        println!("\n{} Attempting to crack hash...", style("⚡").cyan());
         result.crack_result = attempt_crack(&client, &args.hash).await?;
         if let Some(crack_result) = &result.crack_result {
             display_crack_result(crack_result);
         } else {
-            println!("{} Hash not found in common databases", "✗".red());
+            println!("{} Hash not found in common databases", style("✗").red());
         }
     }
     Ok(())
@@ -215,51 +217,53 @@ fn try_common_passwords(hash: &str) -> Option<CrackResult> {
         "admin", "letmein", "welcome", "monkey", "dragon", "master"
     ];
     for password in &common_passwords {
-        let md5_hash = format!("{:x}", md5::compute(password.as_bytes()));
-        if md5_hash == hash.to_lowercase() {
+        // SHA-256 (preferred over MD5)
+        let mut hasher = Sha256::new();
+        hasher.update(password.as_bytes());
+        let sha256_hash = format!("{:x}", hasher.finalize());
+        if sha256_hash == hash.to_lowercase() {
             return Some(CrackResult {
                 plaintext: Some(password.to_string()),
                 source: "Common Passwords".to_string(),
-                method: "Dictionary Attack (MD5)".to_string(),
+                method: "Dictionary Attack (SHA-256)".to_string(),
             });
         }
-        use sha1::{Sha1, Digest};
-        let mut hasher = Sha1::new();
-        hasher.update(password.as_bytes());
-        let sha1_hash = format!("{:x}", hasher.finalize());
-        if sha1_hash == hash.to_lowercase() {
+        
+        // BLAKE3 (modern, fast hashing)
+        let blake3_hash = format!("{}", blake3::hash(password.as_bytes()));
+        if blake3_hash == hash.to_lowercase() {
             return Some(CrackResult {
                 plaintext: Some(password.to_string()),
                 source: "Common Passwords".to_string(),
-                method: "Dictionary Attack (SHA1)".to_string(),
+                method: "Dictionary Attack (BLAKE3)".to_string(),
             });
         }
     }
     None
 }
 fn display_hash_types(types: &[HashType]) {
-    println!("\n{}", "Hash Type Analysis:".green().bold());
-    println!("{}", "══════════════════".cyan());
+    println!("\n{}", style("Hash Type Analysis:").green().bold());
+    println!("{}", style("══════════════════").cyan());
     for hash_type in types {
         let confidence_color = match hash_type.confidence {
-            90..=100 => hash_type.confidence.to_string().green(),
-            70..=89 => hash_type.confidence.to_string().yellow(),
-            _ => hash_type.confidence.to_string().red(),
+            90..=100 => style(hash_type.confidence.to_string()).green(),
+            70..=89 => style(hash_type.confidence.to_string()).yellow(),
+            _ => style(hash_type.confidence.to_string()).red(),
         };
         println!("  {} {} ({}% confidence)",
-            "•".cyan(),
-            hash_type.name.bold(),
+            style("•").cyan(),
+            style(&hash_type.name).bold(),
             confidence_color
         );
-        println!("    {}", hash_type.description.dimmed());
+        println!("    {}", style(&hash_type.description).dim());
     }
 }
 fn display_crack_result(result: &CrackResult) {
-    println!("\n{}", "Crack Results:".green().bold());
-    println!("{}", "══════════════".cyan());
+    println!("\n{}", style("Crack Results:").green().bold());
+    println!("{}", style("══════════════").cyan());
     if let Some(plaintext) = &result.plaintext {
-        println!("  {} {}", "Plaintext:".yellow(), plaintext.green().bold());
-        println!("  {} {}", "Source:".yellow(), result.source.cyan());
-        println!("  {} {}", "Method:".yellow(), result.method.cyan());
+        println!("  {} {}", style("Plaintext:").yellow(), style(plaintext).green().bold());
+        println!("  {} {}", style("Source:").yellow(), style(&result.source).cyan());
+        println!("  {} {}", style("Method:").yellow(), style(&result.method).cyan());
     }
 }

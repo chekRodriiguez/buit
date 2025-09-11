@@ -1,15 +1,14 @@
 use crate::cli::PortscanArgs;
 use crate::config::Config;
 use anyhow::Result;
-use colored::*;
-use futures::future::join_all;
+use console::style;
 use std::net::{IpAddr, SocketAddr, ToSocketAddrs};
 use std::time::Duration;
 use tokio::net::TcpStream;
 use tokio::time::timeout;
 
 pub async fn run(args: PortscanArgs) -> Result<()> {
-    println!("{} Port scanning: {}", "🔍".cyan(), args.target.yellow().bold());
+    println!("{} Port scanning: {}", style("🔍").cyan(), style(&args.target).yellow().bold());
     
     let config = Config::load()?;
     let thread_count = config.settings.max_threads;
@@ -17,17 +16,17 @@ pub async fn run(args: PortscanArgs) -> Result<()> {
     let ports = parse_port_range(&args.ports.unwrap_or_else(|| "1-1000".to_string()))?;
     let scan_type = args.scan_type.as_deref().unwrap_or("tcp");
     
-    println!("{} Scanning {} ports with {} threads", "⚡".yellow(), ports.len(), thread_count);
+    println!("{} Scanning {} ports with {} threads", style("⚡").yellow(), ports.len(), thread_count);
     
     let target_ip = resolve_target(&args.target).await?;
     let open_ports = match scan_type {
         "tcp" => tcp_scan(&target_ip, &ports, thread_count).await?,
         "udp" => {
-            println!("{} UDP scanning not implemented yet", "⚠️".yellow());
+            println!("{} UDP scanning not implemented yet", style("⚠️").yellow());
             Vec::new()
         }
         _ => {
-            println!("{} Unknown scan type: {}", "❌".red(), scan_type);
+            println!("{} Unknown scan type: {}", style("❌").red(), scan_type);
             return Ok(());
         }
     };
@@ -37,6 +36,7 @@ pub async fn run(args: PortscanArgs) -> Result<()> {
 }
 
 fn parse_port_range(port_str: &str) -> Result<Vec<u16>> {
+    const MAX_PORTS: usize = 65_535;
     let mut ports = Vec::new();
     
     for part in port_str.split(',') {
@@ -45,11 +45,28 @@ fn parse_port_range(port_str: &str) -> Result<Vec<u16>> {
             if range.len() == 2 {
                 let start: u16 = range[0].parse()?;
                 let end: u16 = range[1].parse()?;
+                
+                if start > end {
+                    return Err(anyhow::anyhow!("Invalid port range: {} > {}", start, end));
+                }
+                
+                let range_size = (end - start + 1) as usize;
+                if range_size > 10_000 {
+                    return Err(anyhow::anyhow!("Port range too large: {} ports (max 10,000)", range_size));
+                }
+                
+                if ports.len() + range_size > MAX_PORTS {
+                    return Err(anyhow::anyhow!("Total ports exceed maximum: {}", MAX_PORTS));
+                }
+                
                 for port in start..=end {
                     ports.push(port);
                 }
             }
         } else {
+            if ports.len() >= MAX_PORTS {
+                return Err(anyhow::anyhow!("Too many ports specified (max {})", MAX_PORTS));
+            }
             ports.push(part.parse()?);
         }
     }
@@ -71,49 +88,43 @@ async fn resolve_target(target: &str) -> Result<IpAddr> {
 }
 
 async fn tcp_scan(target_ip: &IpAddr, ports: &[u16], max_concurrent: usize) -> Result<Vec<u16>> {
-    let mut open_ports = Vec::new();
-    let mut _tasks: Vec<()> = Vec::new();
+    use futures::stream::{iter, StreamExt};
     
-    for chunk in ports.chunks(max_concurrent) {
-        let chunk_tasks: Vec<_> = chunk.iter().map(|&port| {
+    // Use async stream instead of rayon block_on to avoid deadlocks
+    let open_ports: Vec<u16> = iter(ports.iter().cloned())
+        .map(|port| async move {
             let addr = SocketAddr::new(*target_ip, port);
-            async move {
-                match timeout(Duration::from_millis(1000), TcpStream::connect(addr)).await {
-                    Ok(Ok(_)) => Some(port),
-                    _ => None,
-                }
+            match timeout(Duration::from_millis(1000), TcpStream::connect(addr)).await {
+                Ok(Ok(_)) => {
+                    print!(".");
+                    Some(port)
+                },
+                _ => None,
             }
-        }).collect();
+        })
+        .buffer_unordered(max_concurrent)
+        .filter_map(|x| async move { x })
+        .collect()
+        .await;
         
-        let results = join_all(chunk_tasks).await;
-        for result in results {
-            if let Some(port) = result {
-                open_ports.push(port);
-            }
-        }
-        
-        print!(".");
-        tokio::task::yield_now().await;
-    }
-    
     println!();
     Ok(open_ports)
 }
 
 fn display_results(target: &str, open_ports: &[u16]) {
-    println!("\n{} Scan Results for {}", "📋".cyan(), target.yellow().bold());
+    println!("\n{} Scan Results for {}", style("📊").cyan(), style(target).yellow().bold());
     println!("{}", "=".repeat(50));
     
     if open_ports.is_empty() {
-        println!("{} No open ports found", "❌".red());
+        println!("{} No open ports found", style("❌").red());
         return;
     }
     
-    println!("{} Found {} open ports:", "✅".green(), open_ports.len());
+    println!("{} Found {} open ports:", style("✅").green(), open_ports.len());
     
     for &port in open_ports {
         let service = get_common_service(port);
-        println!("  {} {}/tcp  {}", "🔓".green(), port, service);
+        println!("  {} {}/tcp  {}", style("✓").green(), port, service);
     }
 }
 
