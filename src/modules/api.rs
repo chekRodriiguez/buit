@@ -267,17 +267,21 @@ async fn ip_handler(
 ) -> Result<Json<ApiResponse<Value>>, StatusCode> {
     let args = IpArgs {
         ip: address.clone(),
-        reverse: true,
-        asn: true,
-        geo: true,
+        no_reverse: false,
+        no_asn: false,
+        no_geo: false,
     };
 
     match ip::run(args.clone()).await {
-        Ok(_) => {
+        Ok(result) => {
             let data = json!({
-                "ip": address,
-                "message": "IP analysis completed successfully",
-                "note": "Detailed results available via CLI"
+                "ip": result.ip,
+                "valid": result.valid,
+                "version": result.version,
+                "reverse_dns": result.reverse_dns,
+                "asn": result.asn,
+                "geolocation": result.geolocation,
+                "ports": result.ports
             });
             Ok(Json(ApiResponse::success(data)))
         }
