@@ -89,8 +89,6 @@ pub struct UsernameArgs {
     pub output: Option<String>,
     #[arg(short, long, help = "Platforms to search (comma-separated)")]
     pub platforms: Option<String>,
-    #[arg(long, help = "Use sequential mode instead of parallel (lower memory usage)")]
-    pub sequential: bool,
 }
 #[derive(Parser, Clone)]
 pub struct EmailArgs {

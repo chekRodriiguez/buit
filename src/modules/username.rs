@@ -28,40 +28,27 @@ pub async fn run(args: UsernameArgs) -> Result<()> {
     let config = Config::load().unwrap_or_default();
     let max_concurrent = config.settings.max_threads;
     
-    // Use async approach with memory limits for Windows compatibility
-    let results: Vec<Result<UsernameResult>> = if args.sequential {
-        // Sequential mode for memory-constrained environments
-        let mut results = Vec::new();
-        for platform in platforms {
-            pb.inc(1);
-            pb.set_message(format!("Checking {}", platform.name));
-            let result = check_platform(&client, &platform, &args.username).await;
-            results.push(result);
-        }
-        results
-    } else {
-        // Use configured thread count for concurrent requests
-        let mut all_results = Vec::new();
+    // Use configured thread count for concurrent requests
+    let mut all_results = Vec::new();
+    
+    for chunk in platforms.chunks(max_concurrent) {
+        let chunk_tasks: Vec<_> = chunk.iter().map(|platform| {
+            let username = args.username.clone();
+            let client_clone = client.clone();
+            let pb_clone = pb.clone();
+            let platform_name = platform.name.clone();
+            async move {
+                let result = check_platform(&client_clone, platform, &username).await;
+                pb_clone.inc(1);
+                pb_clone.set_message(format!("Checking {}", platform_name));
+                result
+            }
+        }).collect();
         
-        for chunk in platforms.chunks(max_concurrent) {
-            let chunk_tasks: Vec<_> = chunk.iter().map(|platform| {
-                let username = args.username.clone();
-                let client_clone = client.clone();
-                let pb_clone = pb.clone();
-                let platform_name = platform.name.clone();
-                async move {
-                    let result = check_platform(&client_clone, platform, &username).await;
-                    pb_clone.inc(1);
-                    pb_clone.set_message(format!("Checking {}", platform_name));
-                    result
-                }
-            }).collect();
-            
-            let chunk_results = join_all(chunk_tasks).await;
-            all_results.extend(chunk_results);
-        }
-        all_results
-    };
+        let chunk_results = join_all(chunk_tasks).await;
+        all_results.extend(chunk_results);
+    }
+    let results = all_results;
     pb.finish_and_clear();
     println!("\n{}", style(style("Results:").green()).bold());
     println!("{}", style("════════").cyan());
