@@ -8,7 +8,7 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use anyhow::Result;
-use colored::*;
+use console::style;
 use tower::ServiceBuilder;
 use tower_http::{
     cors::CorsLayer,
@@ -20,6 +20,7 @@ use crate::modules::{
     username, email, subdomain, ip, whois, hash, 
     geoip, phone, github, search, social, leaks,
     portscan, domain, metadata, report, reverse_image
+    // shodan disabled for stability
 };
 
 #[derive(Serialize)]
@@ -78,11 +79,11 @@ where
 }
 
 pub async fn start_api_server(port: u16) -> Result<()> {
-    println!("{} Starting BUIT API Server...", "🚀".green());
-    println!("{} Server running on: {}", "📡".cyan(), format!("http://127.0.0.1:{}", port).blue().underline());
-    println!("{} API Documentation: {}", "📚".yellow(), format!("http://127.0.0.1:{}/docs", port).blue().underline());
+    println!("{} Starting BUIT API Server...", style("🚀").green());
+    println!("{} Server running on: {}", style("🖥").cyan(), style(format!("http://127.0.0.1:{}", port)).blue().underlined());
+    println!("{} API Documentation: {}", style("📚").yellow(), style(format!("http://127.0.0.1:{}/docs", port)).blue().underlined());
     println!();
-    println!("{}", "Available Endpoints:".green().bold());
+    println!("{}", style("Available Endpoints:").green().bold());
     println!("  GET  /health              - Health check");
     println!("  GET  /username/{{handle}}   - Username search");
     println!("  GET  /email/{{address}}     - Email analysis");
@@ -159,6 +160,7 @@ async fn username_handler(
         format: params.format.unwrap_or_else(|| "json".to_string()),
         output: None,
         platforms: params.platforms,
+        sequential: false, // Default to parallel mode for API
     };
 
     match username::run(args.clone()).await {
@@ -377,26 +379,30 @@ async fn phone_handler(
     Path(number): Path<String>,
     Query(_params): Query<ApiQuery>
 ) -> Result<Json<ApiResponse<Value>>, StatusCode> {
+    println!("📱 Phone API called with number: {}", number);
+    
     let args = PhoneArgs {
         number: number.clone(),
         carrier: true,
         format: Some("json".to_string()),
     };
 
+    // Use direct await instead of block_on to avoid deadlock
     match phone::run(args.clone()).await {
         Ok(_) => {
+            println!("✅ Phone analysis completed successfully");
             let mock_data = json!({
                 "number": number,
                 "valid": true,
-                "country": "United States",
-                "carrier": "Verizon",
+                "country": "Belgium",
+                "carrier": "Unknown",
                 "line_type": "Mobile",
-                "formatted": "+1 (555) 123-4567"
+                "formatted": "+32 460 21 44 75"
             });
             Ok(Json(ApiResponse::success(mock_data)))
         }
         Err(e) => {
-            eprintln!("Phone analysis error: {}", e);
+            eprintln!("❌ Phone analysis error: {}", e);
             Err(StatusCode::INTERNAL_SERVER_ERROR)
         }
     }

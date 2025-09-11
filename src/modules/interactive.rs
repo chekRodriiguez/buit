@@ -1,8 +1,8 @@
 use anyhow::Result;
-use colored::*;
+use console::style;
 use std::io::{self, Write};
 pub async fn run() -> Result<()> {
-    println!("{} {} {}", "🎮".cyan(), "Interactive OSINT Mode".green().bold(), "- Guided Workflows".yellow());
+    println!("{} {} {}", style("🎮").cyan(), style("Interactive OSINT Mode").green().bold(), style("- Guided Workflows").yellow());
     println!();
     loop {
         display_main_menu();
@@ -16,11 +16,11 @@ pub async fn run() -> Result<()> {
             "6" => show_configuration().await?,
             "7" => show_help(),
             "0" | "exit" | "quit" => {
-                println!("{} Goodbye! Happy hunting! 🕵️", "👋".yellow());
+                println!("{} Goodbye! Happy hunting! 🕵️", style("👋").yellow());
                 break;
             }
             _ => {
-                println!("{} Invalid choice. Please try again.", "❌".red());
+                println!("{} Invalid choice. Please try again.", style("❌").red());
             }
         }
         println!();
@@ -28,39 +28,39 @@ pub async fn run() -> Result<()> {
     Ok(())
 }
 fn display_main_menu() {
-    println!("{}", "╔══════════════════════════════════════╗".cyan());
-    println!("{}", "║           BUIT Main Menu             ║".cyan());
-    println!("{}", "╚══════════════════════════════════════╝".cyan());
+    println!("{}", style("╔══════════════════════════════════════╗").cyan());
+    println!("{}", style("║           BUIT Main Menu             ║").cyan());
+    println!("{}", style("╚══════════════════════════════════════╝").cyan());
     println!();
-    println!("{} {} Target Investigation", "1.".yellow(), "👤".cyan());
+    println!("{} {} Target Investigation", style("1.").yellow(), style("👤").cyan());
     println!("   Username, email, phone number research");
     println!();
-    println!("{} {} Domain Reconnaissance", "2.".yellow(), "🌐".cyan());
+    println!("{} {} Domain Reconnaissance", style("2.").yellow(), style("🌐").cyan());
     println!("   Domain analysis, subdomains, WHOIS");
     println!();
-    println!("{} {} Social Media Investigation", "3.".yellow(), "📱".cyan());
+    println!("{} {} Social Media Investigation", style("3.").yellow(), style("📱").cyan());
     println!("   Social profiles, GitHub analysis");
     println!();
-    println!("{} {} Network Analysis", "4.".yellow(), "🖥️".cyan());
+    println!("{} {} Network Analysis", style("4.").yellow(), style("🖥️").cyan());
     println!("   IP analysis, port scanning, geolocation");
     println!();
-    println!("{} {} Security Assessment", "5.".yellow(), "🛡️".cyan());
+    println!("{} {} Security Assessment", style("5.").yellow(), style("🛡️").cyan());
     println!("   URL scanning, hash analysis, leaks");
     println!();
-    println!("{} {} Configuration", "6.".yellow(), "⚙️".cyan());
+    println!("{} {} Configuration", style("6.").yellow(), style("⚙️").cyan());
     println!("   View/modify BUIT settings");
     println!();
-    println!("{} {} Help & Documentation", "7.".yellow(), "❓".cyan());
+    println!("{} {} Help & Documentation", style("7.").yellow(), style("❓").cyan());
     println!("   Learn about BUIT modules");
     println!();
-    println!("{} {} Exit", "0.".yellow(), "🚪".cyan());
+    println!("{} {} Exit", style("0.").yellow(), style("🚪").cyan());
     println!();
 }
 async fn target_investigation() -> Result<()> {
-    println!("{}", "🎯 Target Investigation Workflow".green().bold());
+    println!("{}", style("🎯 Target Investigation Workflow").green().bold());
     println!();
     let target = get_user_input("Enter target (username, email, or phone)")?;
-    println!("{}", "Select investigation type:".yellow());
+    println!("{}", style("Select investigation type:").yellow());
     println!("1. Username search across platforms");
     println!("2. Email investigation & breach checking");
     println!("3. Phone number analysis");
@@ -68,32 +68,32 @@ async fn target_investigation() -> Result<()> {
     let choice = get_user_input("Choice")?;
     match choice.trim() {
         "1" => {
-            println!("{} Searching username: {}", "🔍".cyan(), target.cyan());
+            println!("{} Searching username: {}", style("🔍").cyan(), style(&target).cyan());
             run_module("username", &target).await?;
         }
         "2" => {
-            println!("{} Investigating email: {}", "📧".cyan(), target.cyan());
+            println!("{} Investigating email: {}", style("📧").cyan(), style(&target).cyan());
             run_module("email", &format!("{} --breaches --social", target)).await?;
         }
         "3" => {
-            println!("{} Analyzing phone: {}", "📱".cyan(), target.cyan());
+            println!("{} Analyzing phone: {}", style("📱").cyan(), style(&target).cyan());
             run_module("phone", &format!("{} --carrier", target)).await?;
         }
         "4" => {
-            println!("{} Running comprehensive investigation...", "🔄".cyan());
+            println!("{} Running comprehensive investigation...", style("🔄").cyan());
             run_module("username", &target).await?;
             run_module("email", &format!("{} --breaches", target)).await?;
             run_module("phone", &format!("{} --carrier", target)).await?;
         }
-        _ => println!("{} Invalid choice", "❌".red()),
+        _ => println!("{} Invalid choice", style("❌").red()),
     }
     Ok(())
 }
 async fn domain_reconnaissance() -> Result<()> {
-    println!("{}", "🌐 Domain Reconnaissance Workflow".green().bold());
+    println!("{}", style("🌐 Domain Reconnaissance Workflow").green().bold());
     println!();
     let domain = get_user_input("Enter domain (e.g., example.com)")?;
-    println!("{}", "Select reconnaissance type:".yellow());
+    println!("{}", style("Select reconnaissance type:").yellow());
     println!("1. Basic domain info (WHOIS)");
     println!("2. Subdomain enumeration");
     println!("3. Comprehensive domain analysis");
@@ -101,11 +101,11 @@ async fn domain_reconnaissance() -> Result<()> {
     let choice = get_user_input("Choice")?;
     match choice.trim() {
         "1" => {
-            println!("{} Getting WHOIS for: {}", "🔍".cyan(), domain.cyan());
+            println!("{} Getting WHOIS for: {}", style("🔍").cyan(), style(&domain).cyan());
             run_module("whois", &format!("{} --parse", domain)).await?;
         }
         "2" => {
-            println!("{} Enumerating subdomains for: {}", "🔍".cyan(), domain.cyan());
+            println!("{} Enumerating subdomains for: {}", style("🔍").cyan(), style(&domain).cyan());
             let fast = get_yes_no("Use fast mode (skip alive check)?");
             if fast {
                 run_module("subdomain", &format!("{} --skip-alive-check", domain)).await?;
@@ -114,79 +114,79 @@ async fn domain_reconnaissance() -> Result<()> {
             }
         }
         "3" => {
-            println!("{} Running comprehensive domain analysis...", "🔄".cyan());
+            println!("{} Running comprehensive domain analysis...", style("🔄").cyan());
             run_module("whois", &format!("{} --parse", domain)).await?;
             run_module("subdomain", &domain).await?;
             run_module("domain", &format!("{} --dns --ssl", domain)).await?;
         }
         "4" => {
-            println!("{} Scanning URL: https://{}", "🔍".cyan(), domain.cyan());
+            println!("{} Scanning URL: https://{}", style("🔍").cyan(), style(&domain).cyan());
             run_module("urlscan", &format!("https://{}", domain)).await?;
         }
-        _ => println!("{} Invalid choice", "❌".red()),
+        _ => println!("{} Invalid choice", style("❌").red()),
     }
     Ok(())
 }
 async fn social_investigation() -> Result<()> {
-    println!("{}", "📱 Social Media Investigation".green().bold());
+    println!("{}", style("📱 Social Media Investigation").green().bold());
     println!();
     let target = get_user_input("Enter username or profile")?;
-    println!("{}", "Select investigation type:".yellow());
+    println!("{}", style("Select investigation type:").yellow());
     println!("1. Social media profiles");
     println!("2. GitHub analysis");
     println!("3. Comprehensive social investigation");
     let choice = get_user_input("Choice")?;
     match choice.trim() {
         "1" => {
-            println!("{} Searching social profiles: {}", "🔍".cyan(), target.cyan());
+            println!("{} Searching social profiles: {}", style("🔍").cyan(), style(&target).cyan());
             run_module("social", &format!("{} --analyze", target)).await?;
         }
         "2" => {
-            println!("{} Analyzing GitHub profile: {}", "🔍".cyan(), target.cyan());
+            println!("{} Analyzing GitHub profile: {}", style("🔍").cyan(), style(&target).cyan());
             run_module("github", &format!("{} --repos --secrets", target)).await?;
         }
         "3" => {
-            println!("{} Running comprehensive social investigation...", "🔄".cyan());
+            println!("{} Running comprehensive social investigation...", style("🔄").cyan());
             run_module("social", &format!("{} --analyze", target)).await?;
             run_module("github", &format!("{} --repos", target)).await?;
         }
-        _ => println!("{} Invalid choice", "❌".red()),
+        _ => println!("{} Invalid choice", style("❌").red()),
     }
     Ok(())
 }
 async fn network_analysis() -> Result<()> {
-    println!("{}", "🖥️ Network Analysis Workflow".green().bold());
+    println!("{}", style("🖥️ Network Analysis Workflow").green().bold());
     println!();
     let target = get_user_input("Enter IP address or hostname")?;
-    println!("{}", "Select analysis type:".yellow());
+    println!("{}", style("Select analysis type:").yellow());
     println!("1. IP geolocation");
     println!("2. Port scanning");
     println!("3. Comprehensive network analysis");
     let choice = get_user_input("Choice")?;
     match choice.trim() {
         "1" => {
-            println!("{} Geolocating IP: {}", "🔍".cyan(), target.cyan());
+            println!("{} Geolocating IP: {}", style("🔍").cyan(), style(&target).cyan());
             run_module("geoip", &format!("{} --isp", target)).await?;
             run_module("ip", &format!("{} --geo --asn", target)).await?;
         }
         "2" => {
-            println!("{} Scanning ports: {}", "🔍".cyan(), target.cyan());
+            println!("{} Scanning ports: {}", style("🔍").cyan(), style(&target).cyan());
             run_module("portscan", &target).await?;
         }
         "3" => {
-            println!("{} Running comprehensive network analysis...", "🔄".cyan());
+            println!("{} Running comprehensive network analysis...", style("🔄").cyan());
             run_module("ip", &format!("{} --geo --asn --reverse", target)).await?;
             run_module("portscan", &target).await?;
             run_module("whois", &target).await?;
         }
-        _ => println!("{} Invalid choice", "❌".red()),
+        _ => println!("{} Invalid choice", style("❌").red()),
     }
     Ok(())
 }
 async fn security_assessment() -> Result<()> {
-    println!("{}", "🛡️ Security Assessment Tools".green().bold());
+    println!("{}", style("🛡️ Security Assessment Tools").green().bold());
     println!();
-    println!("{}", "Select assessment type:".yellow());
+    println!("{}", style("Select assessment type:").yellow());
     println!("1. Hash analysis");
     println!("2. Data breach checking");
     println!("3. URL security scan");
@@ -195,34 +195,34 @@ async fn security_assessment() -> Result<()> {
     match choice.trim() {
         "1" => {
             let hash = get_user_input("Enter hash to analyze")?;
-            println!("{} Analyzing hash: {}", "🔍".cyan(), hash.cyan());
+            println!("{} Analyzing hash: {}", style("🔍").cyan(), style(&hash).cyan());
             run_module("hash", &format!("{} --identify --crack", hash)).await?;
         }
         "2" => {
             let email = get_user_input("Enter email to check for breaches")?;
-            println!("{} Checking breaches for: {}", "🔍".cyan(), email.cyan());
+            println!("{} Checking breaches for: {}", style("🔍").cyan(), style(&email).cyan());
             run_module("leaks", &format!("{} --hibp --passwords", email)).await?;
         }
         "3" => {
             let url = get_user_input("Enter URL to scan")?;
-            println!("{} Scanning URL: {}", "🔍".cyan(), url.cyan());
+            println!("{} Scanning URL: {}", style("🔍").cyan(), style(&url).cyan());
             run_module("urlscan", &url).await?;
         }
         "4" => {
             let query = get_user_input("Enter Shodan search query")?;
-            println!("{} Searching Shodan: {}", "🔍".cyan(), query.cyan());
+            println!("{} Searching Shodan: {}", style("🔍").cyan(), style(&query).cyan());
             run_module("shodan", &format!("{} --vulns", query)).await?;
         }
-        _ => println!("{} Invalid choice", "❌".red()),
+        _ => println!("{} Invalid choice", style("❌").red()),
     }
     Ok(())
 }
 async fn show_configuration() -> Result<()> {
-    println!("{}", "⚙️ BUIT Configuration".green().bold());
+    println!("{}", style("⚙️ BUIT Configuration").green().bold());
     println!();
     run_module("config", "list").await?;
     println!();
-    println!("{}", "Configuration options:".yellow());
+    println!("{}", style("Configuration options:").yellow());
     println!("1. Set thread count");
     println!("2. Set proxy");
     println!("3. Set user agent");
@@ -249,14 +249,14 @@ async fn show_configuration() -> Result<()> {
             run_module("config", &format!("set-key {} {}", service, key)).await?;
         }
         "0" => return Ok(()),
-        _ => println!("{} Invalid choice", "❌".red()),
+        _ => println!("{} Invalid choice", style("❌").red()),
     }
     Ok(())
 }
 fn show_help() {
-    println!("{}", "❓ BUIT Help & Documentation".green().bold());
+    println!("{}", style("❓ BUIT Help & Documentation").green().bold());
     println!();
-    println!("{} Available modules:", "📚".cyan());
+    println!("{} Available modules:", style("📚").cyan());
     let modules = [
         ("username", "Search usernames across social platforms"),
         ("email", "Email investigation and breach checking"),
@@ -276,21 +276,21 @@ fn show_help() {
         ("domain", "Comprehensive domain analysis"),
     ];
     for (module, description) in modules.iter() {
-        println!("  {} {}", module.yellow().bold(), description);
+        println!("  {} {}", style(module).yellow().bold(), description);
     }
     println!();
-    println!("{} For detailed help on any module:", "💡".yellow());
+    println!("{} For detailed help on any module:", style("💡").yellow());
     println!("  buit <module> --help");
     println!();
-    println!("{} Examples:", "🎯".cyan());
+    println!("{} Examples:", style("🎯").cyan());
     println!("  buit username john_doe");
     println!("  buit subdomain example.com --skip-alive-check");
     println!("  buit whois example.com --parse");
     println!("  buit ip 8.8.8.8 --geo");
 }
 async fn run_module(module: &str, args: &str) -> Result<()> {
-    println!("{} Running: buit {} {}", "▶️".green(), module.yellow(), args.cyan());
-    println!("{}", "─".repeat(50).dimmed());
+    println!("{} Running: buit {} {}", style("▶️").green(), style(module).yellow(), style(args).cyan());
+    println!("{}", style("─".repeat(50)).dim());
     use tokio::process::Command;
     let output = Command::new("./target/release/buit")
         .arg(module)
@@ -307,15 +307,15 @@ async fn run_module(module: &str, args: &str) -> Result<()> {
             }
         }
         Err(e) => {
-            println!("{} Error running module: {}", "❌".red(), e);
+            println!("{} Error running module: {}", style("❌").red(), e);
         }
     }
-    println!("{}", "─".repeat(50).dimmed());
-    println!("{} Module execution completed", "✅".green());
+    println!("{}", style("─".repeat(50)).dim());
+    println!("{} Module execution completed", style("✅").green());
     Ok(())
 }
 fn get_user_input(prompt: &str) -> Result<String> {
-    print!("{} {}: ", "➤".blue(), prompt.yellow());
+    print!("{} {}: ", style("➤").blue(), style(prompt).yellow());
     io::stdout().flush()?;
     let mut input = String::new();
     io::stdin().read_line(&mut input)?;
@@ -323,14 +323,14 @@ fn get_user_input(prompt: &str) -> Result<String> {
 }
 fn get_yes_no(prompt: &str) -> bool {
     loop {
-        print!("{} {} (y/n): ", "➤".blue(), prompt.yellow());
+        print!("{} {} (y/n): ", style("➤").blue(), style(prompt).yellow());
         io::stdout().flush().unwrap();
         let mut input = String::new();
         io::stdin().read_line(&mut input).unwrap();
         match input.trim().to_lowercase().as_str() {
             "y" | "yes" => return true,
             "n" | "no" => return false,
-            _ => println!("{} Please enter 'y' or 'n'", "❌".red()),
+            _ => println!("{} Please enter 'y' or 'n'", style("❌").red()),
         }
     }
 }

@@ -1,13 +1,13 @@
 use crate::cli::ReportArgs;
 use anyhow::Result;
-use colored::*;
+use console::style;
 use std::fs;
 use chrono::Utc;
 use handlebars::Handlebars;
 use serde_json::{json, Value};
 
 pub fn run(args: ReportArgs) -> Result<()> {
-    println!("{} Generating report: {}", "📊".cyan(), args.title.yellow().bold());
+    println!("{} Generating report: {}", style("📊").cyan(), style(&args.title).yellow().bold());
     
     let format = args.format.as_deref().unwrap_or("html");
     let output_file = args.output.as_deref().unwrap_or_else(|| {
@@ -19,8 +19,8 @@ pub fn run(args: ReportArgs) -> Result<()> {
         }
     });
     
-    println!("📄 Format: {}", format.cyan());
-    println!("💾 Output: {}", output_file.yellow());
+    println!("📄 Format: {}", style(format).cyan());
+    println!("💾 Output: {}", style(output_file).yellow());
     
     let report_data = generate_sample_report_data(&args.title)?;
     
@@ -28,16 +28,16 @@ pub fn run(args: ReportArgs) -> Result<()> {
         "html" => generate_html_report(&report_data, output_file)?,
         "markdown" => generate_markdown_report(&report_data, output_file)?,
         "pdf" => {
-            println!("{} PDF generation not implemented yet, generating HTML instead", "⚠️".yellow());
+            println!("{} PDF generation not implemented yet, generating HTML instead", style("⚠️").yellow());
             generate_html_report(&report_data, &output_file.replace(".pdf", ".html"))?;
         },
         _ => {
-            println!("{} Unknown format '{}', using HTML", "⚠️".yellow(), format);
+            println!("{} Unknown format '{}', using HTML", style("⚠️").yellow(), format);
             generate_html_report(&report_data, output_file)?;
         }
     }
     
-    println!("\n{} Report generated successfully: {}", "✅".green(), output_file.green().bold());
+    println!("\n{} Report generated successfully: {}", style("✅").green(), style(style(output_file).green()).bold());
     
     Ok(())
 }
