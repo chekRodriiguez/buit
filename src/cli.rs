@@ -44,8 +44,8 @@ pub enum Commands {
     Metadata(MetadataArgs),
     #[command(about = "Enumerate subdomains")]
     Subdomain(SubdomainArgs),
-    #[command(about = "Shodan search")]
-    Shodan(ShodanArgs),
+    // #[command(about = "Shodan search")]
+    // Shodan(ShodanArgs),
     #[command(about = "Port scanning")]
     Portscan(PortscanArgs),
     #[command(about = "WHOIS lookup")]
@@ -68,6 +68,16 @@ pub enum Commands {
     Interactive,
     #[command(about = "Setup BUIT installation")]
     Setup,
+    
+    // New high-priority modules
+    #[command(about = "Reverse DNS lookup")]
+    ReverseDns(ReverseDnsArgs),
+    #[command(about = "ASN lookup")]
+    AsnLookup(AsnLookupArgs),
+    #[command(about = "SSL certificate analysis")]
+    SslCert(SslCertArgs),
+    #[command(about = "Breach database check")]
+    BreachCheck(BreachCheckArgs),
 }
 #[derive(Parser, Clone)]
 pub struct UsernameArgs {
@@ -79,6 +89,8 @@ pub struct UsernameArgs {
     pub output: Option<String>,
     #[arg(short, long, help = "Platforms to search (comma-separated)")]
     pub platforms: Option<String>,
+    #[arg(long, help = "Use sequential mode instead of parallel (lower memory usage)")]
+    pub sequential: bool,
 }
 #[derive(Parser, Clone)]
 pub struct EmailArgs {
@@ -225,15 +237,15 @@ pub struct SubdomainArgs {
     #[arg(long, help = "Skip availability testing for faster results")]
     pub skip_alive_check: bool,
 }
-#[derive(Parser, Clone)]
-pub struct ShodanArgs {
-    #[arg(help = "Search query")]
-    pub query: String,
-    #[arg(short, long, help = "Number of results")]
-    pub limit: Option<usize>,
-    #[arg(short, long, help = "Include vulnerability info")]
-    pub vulns: bool,
-}
+// #[derive(Parser, Clone)]
+// pub struct ShodanArgs {
+//     #[arg(help = "Search query")]
+//     pub query: String,
+//     #[arg(short, long, help = "Number of results")]
+//     pub limit: Option<usize>,
+//     #[arg(short, long, help = "Include vulnerability info")]
+//     pub vulns: bool,
+// }
 #[derive(Parser, Clone)]
 pub struct PortscanArgs {
     #[arg(help = "Target IP or hostname")]
@@ -306,4 +318,43 @@ pub struct ReportArgs {
     pub format: Option<String>,
     #[arg(short, long, help = "Output file")]
     pub output: Option<String>,
+}
+
+// New module argument structs
+#[derive(Parser, Clone)]
+pub struct ReverseDnsArgs {
+    #[arg(help = "IP, CIDR block, or IP range to lookup")]
+    pub target: String,
+    #[arg(short, long, help = "Number of concurrent threads", default_value = "10")]
+    pub threads: usize,
+    #[arg(long, help = "Force processing of large IP ranges")]
+    pub force: bool,
+}
+
+#[derive(Parser, Clone)]
+pub struct AsnLookupArgs {
+    #[arg(help = "IP address or hostname to lookup")]
+    pub target: String,
+}
+
+#[derive(Parser, Clone)]
+pub struct SslCertArgs {
+    #[arg(help = "Domain to analyze")]
+    pub domain: String,
+    #[arg(short, long, help = "Port number", default_value = "443")]
+    pub port: u16,
+}
+
+#[derive(Parser, Clone)]
+pub struct BreachCheckArgs {
+    #[arg(help = "Email or username to check")]
+    pub target: String,
+    #[arg(long, help = "Check HaveIBeenPwned")]
+    pub hibp: bool,
+    #[arg(long, help = "Check DeHashed")]
+    pub dehashed: bool,
+    #[arg(long, help = "Check IntelX")]
+    pub intelx: bool,
+    #[arg(short, long, help = "Check all available sources")]
+    pub all: bool,
 }
