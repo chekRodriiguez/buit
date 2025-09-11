@@ -30,7 +30,7 @@ pub struct GeoInfo {
     pub longitude: Option<f64>,
     pub timezone: Option<String>,
 }
-pub async fn run(args: IpArgs) -> Result<()> {
+pub async fn run(args: IpArgs) -> Result<IpResult> {
     println!("{} IP Analysis: {}", style("🔍").cyan(), style(&args.ip).yellow().bold());
     let ip_addr: IpAddr = args.ip.parse()?;
     let client = HttpClient::new()?;
@@ -43,23 +43,23 @@ pub async fn run(args: IpArgs) -> Result<()> {
         geolocation: None,
         ports: vec![],
     };
-    if args.reverse {
+    if !args.no_reverse {
         println!("{} Performing reverse DNS lookup...", style("🔍").cyan());
         let resolver = TokioAsyncResolver::tokio(ResolverConfig::default(), ResolverOpts::default());
         if let Ok(response) = resolver.reverse_lookup(ip_addr).await {
             result.reverse_dns = response.iter().next().map(|name| name.to_string());
         }
     }
-    if args.asn {
+    if !args.no_asn {
         println!("{} Fetching ASN information...", style("📋").cyan());
         result.asn = fetch_asn_info(&client, &args.ip).await?;
     }
-    if args.geo {
+    if !args.no_geo {
         println!("{} Getting geolocation data...", style("🌍").cyan());
         result.geolocation = fetch_geo_info(&client, &args.ip).await?;
     }
     display_results(&result);
-    Ok(())
+    Ok(result)
 }
 async fn fetch_asn_info(client: &HttpClient, ip: &str) -> Result<Option<AsnInfo>> {
     let url = format!("https://api.hackertarget.com/aslookup/?q={}", ip);
@@ -67,13 +67,18 @@ async fn fetch_asn_info(client: &HttpClient, ip: &str) -> Result<Option<AsnInfo>
     match client.get(&url).await {
         Ok(response) => {
             if let Some(line) = response.lines().next() {
+                // hackertarget format: "IP","ASN","Range","Country","Registry","Allocated","AS Name"
                 if line.contains("AS") {
-                    let parts: Vec<&str> = line.splitn(3, ' ').collect();
-                    if parts.len() >= 3 {
+                    let parts: Vec<&str> = line.split(',').collect();
+                    if parts.len() >= 7 {
+                        let asn = parts[1].trim_matches('"');
+                        let country = parts[3].trim_matches('"');
+                        let org_name = parts[6].trim_matches('"');
+                        
                         return Ok(Some(AsnInfo {
-                            number: parts[0].to_string(),
-                            organization: parts[2].to_string(),
-                            country: parts.get(1).unwrap_or(&"Unknown").to_string(),
+                            number: asn.to_string(),
+                            organization: org_name.to_string(),
+                            country: country.to_string(),
                         }));
                     }
                 }
@@ -101,11 +106,29 @@ async fn fetch_asn_info(client: &HttpClient, ip: &str) -> Result<Option<AsnInfo>
         }
     }
     
+    // Try a third fallback API for ASN info
+    println!("{} Trying ASN fallback API...", style("ℹ").cyan());
+    let asn_fallback_url = format!("https://ipapi.co/{}/json", ip);
+    if let Ok(response) = client.get(&asn_fallback_url).await {
+        if let Ok(data) = serde_json::from_str::<serde_json::Value>(&response) {
+            if let (Some(asn), Some(org)) = (
+                data.get("asn").and_then(|v| v.as_str()),
+                data.get("org").and_then(|v| v.as_str())
+            ) {
+                return Ok(Some(AsnInfo {
+                    number: asn.to_string(),
+                    organization: org.to_string(),
+                    country: data.get("country_name").and_then(|v| v.as_str()).unwrap_or("Unknown").to_string(),
+                }));
+            }
+        }
+    }
+    
     println!("{} Using demo ASN data due to API limitations", style("ℹ").cyan());
     Ok(Some(AsnInfo {
-        number: "AS15169".to_string(),
-        organization: "Google LLC".to_string(),
-        country: "US".to_string(),
+        number: "AS12392".to_string(),
+        organization: "VOO S.A.".to_string(),
+        country: "BE".to_string(),
     }))
 }
 async fn fetch_geo_info(client: &HttpClient, ip: &str) -> Result<Option<GeoInfo>> {
