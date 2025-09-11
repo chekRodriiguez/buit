@@ -20,8 +20,9 @@ use crate::modules::{
     username, email, subdomain, ip, whois, hash, 
     geoip, phone, github, search, social, leaks,
     portscan, domain, metadata, report, reverse_image
-    // shodan disabled for stability
 };
+
+use tokio::fs;
 
 #[derive(Serialize)]
 pub struct ApiResponse<T> {
@@ -162,19 +163,42 @@ async fn username_handler(
         platforms: params.platforms,
     };
 
-    match username::run(args.clone()).await {
+    // Create a temporary file to capture results
+    let temp_file = format!("temp_username_{}.json", handle);
+    let args_with_output = UsernameArgs {
+        output: Some(temp_file.clone()),
+        ..args
+    };
+    
+    match username::run(args_with_output).await {
         Ok(_) => {
-            let mock_data = json!({
-                "username": handle,
-                "platforms_checked": 15,
-                "found": 3,
-                "results": [
-                    {"platform": "GitHub", "url": format!("https://github.com/{}", handle), "exists": true},
-                    {"platform": "Twitter", "url": format!("https://twitter.com/{}", handle), "exists": true},
-                    {"platform": "Instagram", "url": format!("https://instagram.com/{}", handle), "exists": false}
-                ]
-            });
-            Ok(Json(ApiResponse::success(mock_data)))
+            // Try to read the results from the temp file
+            match fs::read_to_string(&temp_file).await {
+                Ok(content) => {
+                    let _ = fs::remove_file(&temp_file).await; // Cleanup
+                    match serde_json::from_str::<Value>(&content) {
+                        Ok(data) => Ok(Json(ApiResponse::success(data))),
+                        Err(_) => {
+                            // Fallback to basic response
+                            let data = json!({
+                                "username": handle,
+                                "message": "Search completed successfully",
+                                "note": "Results available via CLI for detailed output"
+                            });
+                            Ok(Json(ApiResponse::success(data)))
+                        }
+                    }
+                },
+                Err(_) => {
+                    // Fallback response if temp file can't be read
+                    let data = json!({
+                        "username": handle,
+                        "message": "Search completed successfully",
+                        "note": "Results available via CLI for detailed output"
+                    });
+                    Ok(Json(ApiResponse::success(data)))
+                }
+            }
         }
         Err(e) => {
             eprintln!("Username search error: {}", e);
@@ -196,18 +220,12 @@ async fn email_handler(
 
     match email::run(args.clone()).await {
         Ok(_) => {
-            let mock_data = json!({
+            let data = json!({
                 "email": address,
-                "valid_format": true,
-                "services": [
-                    {"service": "GitHub", "registered": true},
-                    {"service": "Gravatar", "registered": true}
-                ],
-                "breaches": [
-                    {"name": "Example Breach", "date": "2023-01-01", "compromised_data": ["Email addresses", "Passwords"]}
-                ]
+                "message": "Email analysis completed successfully",
+                "note": "Detailed results available via CLI"
             });
-            Ok(Json(ApiResponse::success(mock_data)))
+            Ok(Json(ApiResponse::success(data)))
         }
         Err(e) => {
             eprintln!("Email analysis error: {}", e);
@@ -229,17 +247,12 @@ async fn subdomain_handler(
 
     match subdomain::run(args.clone()).await {
         Ok(_) => {
-            let mock_data = json!({
+            let data = json!({
                 "domain": domain,
-                "subdomains_found": 25,
-                "methods_used": ["Certificate Transparency", "DNS Brute Force"],
-                "subdomains": [
-                    {"subdomain": format!("www.{}", domain), "alive": true, "status": 200},
-                    {"subdomain": format!("mail.{}", domain), "alive": true, "status": 200},
-                    {"subdomain": format!("ftp.{}", domain), "alive": false, "status": 0}
-                ]
+                "message": "Subdomain enumeration completed successfully",
+                "note": "Detailed results available via CLI"
             });
-            Ok(Json(ApiResponse::success(mock_data)))
+            Ok(Json(ApiResponse::success(data)))
         }
         Err(e) => {
             eprintln!("Subdomain enumeration error: {}", e);
@@ -261,24 +274,12 @@ async fn ip_handler(
 
     match ip::run(args.clone()).await {
         Ok(_) => {
-            let mock_data = json!({
+            let data = json!({
                 "ip": address,
-                "version": "IPv4",
-                "reverse_dns": "example.com",
-                "asn": {
-                    "number": "AS15169",
-                    "organization": "Google LLC",
-                    "country": "US"
-                },
-                "geolocation": {
-                    "country": "United States",
-                    "city": "Mountain View",
-                    "region": "California",
-                    "latitude": 37.4223,
-                    "longitude": -122.0840
-                }
+                "message": "IP analysis completed successfully",
+                "note": "Detailed results available via CLI"
             });
-            Ok(Json(ApiResponse::success(mock_data)))
+            Ok(Json(ApiResponse::success(data)))
         }
         Err(e) => {
             eprintln!("IP analysis error: {}", e);
@@ -298,15 +299,12 @@ async fn whois_handler(
 
     match whois::run(args.clone()).await {
         Ok(_) => {
-            let mock_data = json!({
+            let data = json!({
                 "domain": domain,
-                "registrar": "Example Registrar",
-                "creation_date": "2020-01-01",
-                "expiration_date": "2025-01-01",
-                "nameservers": ["ns1.example.com", "ns2.example.com"],
-                "status": "clientTransferProhibited"
+                "message": "WHOIS lookup completed successfully",
+                "cli_command": format!("buit whois {}", domain)
             });
-            Ok(Json(ApiResponse::success(mock_data)))
+            Ok(Json(ApiResponse::success(data)))
         }
         Err(e) => {
             eprintln!("WHOIS lookup error: {}", e);
@@ -327,15 +325,12 @@ async fn hash_handler(
 
     match hash::run(args.clone()).await {
         Ok(_) => {
-            let mock_data = json!({
+            let data = json!({
                 "hash": value,
-                "identified_types": ["MD5", "SHA1"],
-                "most_likely": "MD5",
-                "confidence": 95,
-                "cracked": false,
-                "plaintext": null
+                "message": "Hash analysis completed successfully",
+                "cli_command": format!("buit hash {}", value)
             });
-            Ok(Json(ApiResponse::success(mock_data)))
+            Ok(Json(ApiResponse::success(data)))
         }
         Err(e) => {
             eprintln!("Hash analysis error: {}", e);
@@ -355,17 +350,12 @@ async fn geoip_handler(
 
     match geoip::run(args.clone()).await {
         Ok(_) => {
-            let mock_data = json!({
+            let data = json!({
                 "ip": ip,
-                "country": "United States",
-                "city": "New York",
-                "region": "New York",
-                "latitude": 40.7128,
-                "longitude": -74.0060,
-                "timezone": "America/New_York",
-                "isp": "Example ISP"
+                "message": "GeoIP lookup completed successfully",
+                "cli_command": format!("buit geoip {}", ip)
             });
-            Ok(Json(ApiResponse::success(mock_data)))
+            Ok(Json(ApiResponse::success(data)))
         }
         Err(e) => {
             eprintln!("GeoIP lookup error: {}", e);
@@ -390,15 +380,12 @@ async fn phone_handler(
     match phone::run(args.clone()).await {
         Ok(_) => {
             println!("✅ Phone analysis completed successfully");
-            let mock_data = json!({
+            let data = json!({
                 "number": number,
-                "valid": true,
-                "country": "Belgium",
-                "carrier": "Unknown",
-                "line_type": "Mobile",
-                "formatted": "+32 460 21 44 75"
+                "message": "Phone analysis completed successfully",
+                "cli_command": format!("buit phone {}", number)
             });
-            Ok(Json(ApiResponse::success(mock_data)))
+            Ok(Json(ApiResponse::success(data)))
         }
         Err(e) => {
             eprintln!("❌ Phone analysis error: {}", e);
@@ -419,21 +406,12 @@ async fn github_handler(
 
     match github::run(args.clone()).await {
         Ok(_) => {
-            let mock_data = json!({
+            let data = json!({
                 "username": user,
-                "profile": {
-                    "name": "Example User",
-                    "bio": "Software Developer",
-                    "location": "San Francisco, CA",
-                    "followers": 100,
-                    "following": 50
-                },
-                "repositories": [
-                    {"name": "awesome-project", "stars": 25, "language": "Rust"},
-                    {"name": "web-app", "stars": 10, "language": "JavaScript"}
-                ]
+                "message": "GitHub OSINT completed successfully",
+                "cli_command": format!("buit github {}", user)
             });
-            Ok(Json(ApiResponse::success(mock_data)))
+            Ok(Json(ApiResponse::success(data)))
         }
         Err(e) => {
             eprintln!("GitHub OSINT error: {}", e);
@@ -455,16 +433,12 @@ async fn search_handler(
 
     match search::run(args.clone()).await {
         Ok(_) => {
-            let mock_data = json!({
+            let data = json!({
                 "query": query,
-                "engine": "duckduckgo",
-                "results_count": 20,
-                "results": [
-                    {"title": "Example Result 1", "url": "https://example1.com", "snippet": "This is an example result"},
-                    {"title": "Example Result 2", "url": "https://example2.com", "snippet": "Another example result"}
-                ]
+                "message": "Web search completed successfully",
+                "cli_command": format!("buit search '{}'", query)
             });
-            Ok(Json(ApiResponse::success(mock_data)))
+            Ok(Json(ApiResponse::success(data)))
         }
         Err(e) => {
             eprintln!("Search error: {}", e);
@@ -486,15 +460,12 @@ async fn social_handler(
 
     match social::run(args.clone()).await {
         Ok(_) => {
-            let mock_data = json!({
+            let data = json!({
                 "target": target,
-                "platforms_found": 5,
-                "platforms": [
-                    {"platform": "Twitter", "url": format!("https://twitter.com/{}", target), "verified": true},
-                    {"platform": "Instagram", "url": format!("https://instagram.com/{}", target), "verified": false}
-                ]
+                "message": "Social media search completed successfully",
+                "cli_command": format!("buit social {}", target)
             });
-            Ok(Json(ApiResponse::success(mock_data)))
+            Ok(Json(ApiResponse::success(data)))
         }
         Err(e) => {
             eprintln!("Social media search error: {}", e);
@@ -515,15 +486,12 @@ async fn leaks_handler(
 
     match leaks::run(args.clone()).await {
         Ok(_) => {
-            let mock_data = json!({
+            let data = json!({
                 "target": target,
-                "breaches_found": 2,
-                "breaches": [
-                    {"name": "Adobe", "date": "2013-10-04", "accounts": 152445165},
-                    {"name": "LinkedIn", "date": "2012-05-05", "accounts": 164611595}
-                ]
+                "message": "Breach check completed successfully",
+                "cli_command": format!("buit leaks {}", target)
             });
-            Ok(Json(ApiResponse::success(mock_data)))
+            Ok(Json(ApiResponse::success(data)))
         }
         Err(e) => {
             eprintln!("Leaks check error: {}", e);
@@ -639,14 +607,12 @@ async fn portscan_handler(
 
     match portscan::run(args.clone()).await {
         Ok(_) => {
-            let mock_data = json!({
+            let data = json!({
                 "target": target,
-                "scan_type": "tcp",
-                "ports_scanned": 1000,
-                "open_ports": [22, 80, 443],
-                "scan_time": "2.5s"
+                "message": "Port scan completed successfully",
+                "cli_command": format!("buit portscan {}", target)
             });
-            Ok(Json(ApiResponse::success(mock_data)))
+            Ok(Json(ApiResponse::success(data)))
         }
         Err(e) => {
             eprintln!("Portscan error: {}", e);
@@ -668,23 +634,12 @@ async fn domain_handler(
 
     match domain::run(args.clone()).await {
         Ok(_) => {
-            let mock_data = json!({
+            let data = json!({
                 "domain": domain,
-                "dns": {
-                    "a_records": ["93.184.216.34"],
-                    "mx_records": ["mail.example.com"],
-                    "ns_records": ["ns1.example.com", "ns2.example.com"]
-                },
-                "ssl": {
-                    "valid": true,
-                    "expires": "2024-12-31"
-                },
-                "whois": {
-                    "registrar": "Example Registrar",
-                    "creation_date": "2020-01-01"
-                }
+                "message": "Domain analysis completed successfully",
+                "cli_command": format!("buit domain {}", domain)
             });
-            Ok(Json(ApiResponse::success(mock_data)))
+            Ok(Json(ApiResponse::success(data)))
         }
         Err(e) => {
             eprintln!("Domain analysis error: {}", e);
@@ -704,17 +659,12 @@ async fn metadata_handler(
 
     match metadata::run(args.clone()) {
         Ok(_) => {
-            let mock_data = json!({
+            let data = json!({
                 "file": file,
-                "size": 2048576,
-                "type": "image/jpeg",
-                "exif": {
-                    "camera": "Canon EOS 5D Mark IV",
-                    "date_taken": "2024-01-15 10:30:45",
-                    "gps_coordinates": "40.7128, -74.0060"
-                }
+                "message": "Metadata extraction completed successfully",
+                "cli_command": format!("buit metadata {}", file)
             });
-            Ok(Json(ApiResponse::success(mock_data)))
+            Ok(Json(ApiResponse::success(data)))
         }
         Err(e) => {
             eprintln!("Metadata extraction error: {}", e);
@@ -736,15 +686,12 @@ async fn report_handler(
 
     match report::run(args.clone()) {
         Ok(_) => {
-            let mock_data = json!({
+            let data = json!({
                 "title": title,
-                "format": format_str,
-                "generated": true,
-                "file": "report.html",
-                "sections": 5,
-                "findings": 12
+                "message": "Report generation completed successfully",
+                "cli_command": format!("buit report {}", title)
             });
-            Ok(Json(ApiResponse::success(mock_data)))
+            Ok(Json(ApiResponse::success(data)))
         }
         Err(e) => {
             eprintln!("Report generation error: {}", e);
@@ -764,17 +711,12 @@ async fn reverse_image_handler(
 
     match reverse_image::run(args.clone()).await {
         Ok(_) => {
-            let mock_data = json!({
+            let data = json!({
                 "image": url,
-                "engines": ["google", "bing", "tineye"],
-                "results": [
-                    {"engine": "google", "matches": 3, "confidence": "high"},
-                    {"engine": "bing", "matches": 2, "confidence": "medium"},
-                    {"engine": "tineye", "matches": 1, "confidence": "high"}
-                ],
-                "total_matches": 6
+                "message": "Reverse image search completed successfully",
+                "cli_command": format!("buit reverse-image {}", url)
             });
-            Ok(Json(ApiResponse::success(mock_data)))
+            Ok(Json(ApiResponse::success(data)))
         }
         Err(e) => {
             eprintln!("Reverse image search error: {}", e);
