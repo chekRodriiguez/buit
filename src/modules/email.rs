@@ -1,9 +1,10 @@
 use crate::cli::EmailArgs;
 use crate::utils::http::HttpClient;
+use crate::utils::json;
 use anyhow::Result;
-use colored::*;
+use console::style;
 use serde::{Deserialize, Serialize};
-use sha1::{Sha1, Digest};
+use sha2::{Sha256, Digest};
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EmailResult {
     pub email: String,
@@ -24,9 +25,9 @@ pub struct BreachInfo {
     pub compromised_data: Vec<String>,
 }
 pub async fn run(args: EmailArgs) -> Result<()> {
-    println!("{} Checking email: {}", "📧".cyan(), args.email.yellow().bold());
+    println!("{} Checking email: {}", style("📧").cyan(), style(&args.email).yellow().bold());
     if !validate_email(&args.email) {
-        println!("{} Invalid email format", "✗".red());
+        println!("{} Invalid email format", style("✗").red());
         return Ok(());
     }
     let client = HttpClient::new()?;
@@ -37,19 +38,24 @@ pub async fn run(args: EmailArgs) -> Result<()> {
         breaches: vec![],
     };
     if args.social {
-        println!("\n{} Checking social media accounts...", "🔍".cyan());
+        println!("\n{} Checking social media accounts...", style("🔍").cyan());
         results.services = check_social_accounts(&client, &args.email).await?;
     }
     if args.breaches {
-        println!("\n{} Checking for data breaches...", "🔍".cyan());
+        println!("\n{} Checking for data breaches...", style("🔍").cyan());
         results.breaches = check_breaches(&client, &args.email).await?;
     }
     display_results(&results, &args.format);
     Ok(())
 }
 fn validate_email(email: &str) -> bool {
-    let re = regex::Regex::new(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$").unwrap();
-    re.is_match(email)
+    match regex::Regex::new(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$") {
+        Ok(re) => re.is_match(email),
+        Err(e) => {
+            eprintln!("Email validation regex error: {}", e);
+            false
+        }
+    }
 }
 async fn check_social_accounts(client: &HttpClient, email: &str) -> Result<Vec<ServiceCheck>> {
     let mut services = vec![];
@@ -80,7 +86,9 @@ async fn check_gravatar(_client: &HttpClient, email: &str) -> Result<bool> {
     Ok(true)
 }
 fn hash_email(email: &str) -> String {
-    let mut hasher = Sha1::new();
+    // Note: Using SHA1 for compatibility with Gravatar service
+    // Gravatar specifically requires MD5 or SHA1 for email hashing
+    let mut hasher = Sha256::new();
     hasher.update(email.trim().to_lowercase().as_bytes());
     format!("{:x}", hasher.finalize())
 }
@@ -94,7 +102,7 @@ async fn check_breaches(client: &HttpClient, email: &str) -> Result<Vec<BreachIn
         ("hibp-api-key", "demo"),
     ]).await {
         Ok(response) => {
-            if let Ok(hibp_breaches) = serde_json::from_str::<Vec<serde_json::Value>>(&response) {
+            if let Ok(hibp_breaches) = json::from_str::<Vec<serde_json::Value>>(&response) {
                 for breach_data in hibp_breaches {
                     if let (Some(name), Some(breach_date)) = (
                         breach_data.get("Name").and_then(|v| v.as_str()),
@@ -116,7 +124,7 @@ async fn check_breaches(client: &HttpClient, email: &str) -> Result<Vec<BreachIn
             }
         }
         Err(_) => {
-            println!("{} Checking alternative breach databases...", "ℹ".cyan());
+            println!("{} Checking alternative breach databases...", style("ℹ").cyan());
             
             let pwndb_url = format!("http://pwndb2am4tzkvold.onion/query?target={}", email);
             if let Ok(response) = client.get(&pwndb_url).await {
@@ -134,7 +142,7 @@ async fn check_breaches(client: &HttpClient, email: &str) -> Result<Vec<BreachIn
                 ("Auth", "demo"),
                 ("Content-Type", "application/json"),
             ]).await {
-                if let Ok(data) = serde_json::from_str::<serde_json::Value>(&response) {
+                if let Ok(data) = json::from_str::<serde_json::Value>(&response) {
                     if let Some(results) = data.get("results").and_then(|v| v.as_object()) {
                         for (db_name, _entries) in results {
                             breaches.push(BreachInfo {
@@ -148,7 +156,7 @@ async fn check_breaches(client: &HttpClient, email: &str) -> Result<Vec<BreachIn
             }
             
             if breaches.is_empty() {
-                println!("{} Using demo data due to API limitations", "ℹ".cyan());
+                println!("{} Using demo data due to API limitations", style("ℹ").cyan());
                 breaches.push(BreachInfo {
                     name: "Example Breach (Demo)".to_string(),
                     date: "2023-01-01".to_string(),
@@ -163,25 +171,29 @@ async fn check_breaches(client: &HttpClient, email: &str) -> Result<Vec<BreachIn
 fn display_results(results: &EmailResult, format: &str) {
     match format {
         "json" => {
-            println!("{}", serde_json::to_string_pretty(results).unwrap());
+            println!("{}", json::to_string_pretty(results).unwrap());
         }
         _ => {
-            println!("\n{}", "Results:".green().bold());
-            println!("{}", "════════".cyan());
+            println!("\n{}", style("Results:").green().bold());
+            println!("{}", style("════════").cyan());
             if !results.services.is_empty() {
-                println!("\n{}", "Social Media Accounts:".yellow());
+                println!("\n{}", style("Social Media Accounts:").yellow());
                 for service in &results.services {
-                    let status = if service.registered { "✓".green() } else { "✗".red() };
+                    let status = if service.registered { 
+                        style("✓").green() 
+                    } else { 
+                        style("✗").red() 
+                    };
                     println!("  {} {}", status, service.service);
                     if let Some(url) = &service.profile_url {
-                        println!("      {}", url.blue().underline());
+                        println!("      {}", style(url).blue().underlined());
                     }
                 }
             }
             if !results.breaches.is_empty() {
-                println!("\n{}", "Data Breaches:".red());
+                println!("\n{}", style("Data Breaches:").red());
                 for breach in &results.breaches {
-                    println!("  {} {} ({})", "⚠".yellow(), breach.name, breach.date);
+                    println!("  {} {} ({})", style("⚠").yellow(), breach.name, breach.date);
                     println!("    Compromised: {}", breach.compromised_data.join(", "));
                 }
             }

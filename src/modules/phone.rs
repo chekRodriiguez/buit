@@ -1,7 +1,7 @@
 use crate::cli::PhoneArgs;
 use crate::utils::http::HttpClient;
 use anyhow::Result;
-use colored::*;
+use console::style;
 use serde::{Deserialize, Serialize};
 use regex::Regex;
 #[derive(Debug, Serialize, Deserialize)]
@@ -17,7 +17,7 @@ pub struct PhoneResult {
     pub social_media: Vec<String>,
 }
 pub async fn run(args: PhoneArgs) -> Result<()> {
-    println!("{} Phone number lookup: {}", "📱".cyan(), args.number.yellow().bold());
+    println!("{} Phone number lookup: {}", style("📞").cyan(), style(&args.number).yellow().bold());
     let cleaned_number = clean_phone_number(&args.number);
     let client = HttpClient::new()?;
     let mut result = PhoneResult {
@@ -35,7 +35,7 @@ pub async fn run(args: PhoneArgs) -> Result<()> {
         result.country = identify_country(&cleaned_number);
         result.country_code = extract_country_code(&cleaned_number);
         if args.carrier {
-            println!("\n{} Checking carrier information...", "🔍".cyan());
+            println!("\n{} Checking carrier information...", style("📡").cyan());
             let carrier_info = lookup_carrier(&client, &cleaned_number).await?;
             result.carrier = carrier_info.carrier;
             result.line_type = carrier_info.line_type;
@@ -65,8 +65,10 @@ fn format_phone_number(number: &str) -> String {
     }
 }
 fn validate_phone_number(number: &str) -> bool {
-    let re = Regex::new(r"^\+?[1-9]\d{1,14}$").unwrap();
-    re.is_match(number)
+    match Regex::new(r"^\+?[1-9]\d{1,14}$") {
+        Ok(re) => re.is_match(number),
+        Err(_) => false, // If regex fails, consider invalid
+    }
 }
 fn identify_country(number: &str) -> Option<String> {
     if number.starts_with("1") && number.len() >= 10 {
@@ -135,7 +137,7 @@ async fn lookup_carrier(client: &HttpClient, number: &str) -> Result<CarrierInfo
             }
         }
         Err(_) => {
-            println!("{} Using numverify.com fallback API...", "ℹ".cyan());
+            println!("{} Using numverify.com fallback API...", style("ℹ").cyan());
             
             let fallback_url = format!("http://apilayer.net/api/validate?access_key=demo&number={}&country_code=&format=1", number);
             
@@ -155,7 +157,7 @@ async fn lookup_carrier(client: &HttpClient, number: &str) -> Result<CarrierInfo
         }
     }
     
-    println!("{} Using demo data due to API limitations", "ℹ".cyan());
+    println!("{} Using demo data due to API limitations", style("ℹ").cyan());
     
     let demo_carrier = if number.contains("555") || number.len() < 8 {
         "Unknown Carrier"
@@ -193,37 +195,40 @@ async fn check_social_media(_client: &HttpClient, number: &str) -> Result<Vec<St
 fn display_results(result: &PhoneResult, format: Option<&str>) {
     match format {
         Some("json") => {
-            println!("{}", serde_json::to_string_pretty(result).unwrap());
+            match serde_json::to_string_pretty(result) {
+                Ok(json) => println!("{}", json),
+                Err(e) => eprintln!("Error serializing phone result to JSON: {}", e),
+            }
         }
         _ => {
-            println!("\n{}", "Phone Number Analysis:".green().bold());
-            println!("{}", "═════════════════════".cyan());
-            println!("  {} {}", "Number:".yellow(), result.number);
-            println!("  {} {}", "Formatted:".yellow(), result.formatted);
-            println!("  {} {}", "Valid:".yellow(),
-                if result.valid { "✓".green() } else { "✗".red() });
+            println!("\n{}", style("Phone Number Analysis:").green().bold());
+            println!("{}", style("═════════════════════").cyan());
+            println!("  {} {}", style("Number:").yellow(), result.number);
+            println!("  {} {}", style("Formatted:").yellow(), result.formatted);
+            println!("  {} {}", style("Valid:").yellow(),
+                if result.valid { style("✓").green() } else { style("✗").red() });
             if let Some(country) = &result.country {
-                println!("  {} {}", "Country:".yellow(), country.cyan());
+                println!("  {} {}", style("Country:").yellow(), style(country).cyan());
             }
             if let Some(code) = &result.country_code {
-                println!("  {} {}", "Country Code:".yellow(), code.cyan());
+                println!("  {} {}", style("Country Code:").yellow(), style(code).cyan());
             }
             if let Some(carrier) = &result.carrier {
-                println!("  {} {}", "Carrier:".yellow(), carrier.cyan());
+                println!("  {} {}", style("Carrier:").yellow(), style(carrier).cyan());
             }
             if let Some(line_type) = &result.line_type {
-                println!("  {} {}", "Line Type:".yellow(), line_type.cyan());
+                println!("  {} {}", style("Line Type:").yellow(), style(line_type).cyan());
             }
             if !result.possible_formats.is_empty() {
-                println!("\n{}", "Possible Formats:".yellow());
+                println!("\n{}", style("Possible Formats:").yellow());
                 for format in &result.possible_formats {
-                    println!("  • {}", format.cyan());
+                    println!("  • {}", style(format).cyan());
                 }
             }
             if !result.social_media.is_empty() {
-                println!("\n{}", "Social Media:".yellow());
+                println!("\n{}", style("Social Media:").yellow());
                 for platform in &result.social_media {
-                    println!("  • {}", platform.cyan());
+                    println!("  • {}", style(platform).cyan());
                 }
             }
         }

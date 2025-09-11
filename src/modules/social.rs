@@ -1,7 +1,7 @@
 use crate::cli::SocialArgs;
 use crate::utils::http::HttpClient;
 use anyhow::Result;
-use colored::*;
+use console::style;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use indicatif::{ProgressBar, ProgressStyle};
@@ -27,8 +27,8 @@ pub struct ProfileAnalysis {
     pub profile_age: Option<String>,
 }
 pub async fn run(args: SocialArgs) -> Result<()> {
-    println!("{} Social media reconnaissance for: {}", "👤".cyan(), args.target.yellow().bold());
-    println!("Identifier type: {}", args.id_type.cyan());
+    println!("{} Social media reconnaissance for: {}", style("👤").cyan(), style(&args.target).yellow().bold());
+    println!("Identifier type: {}", style(&args.id_type).cyan());
     let platforms = get_social_platforms(&args.platforms);
     let pb = ProgressBar::new(platforms.len() as u64);
     pb.set_style(
@@ -172,41 +172,41 @@ fn analyze_profiles(profiles: &[ProfileInfo]) -> ProfileAnalysis {
     }
 }
 fn display_results(results: &SocialResult) {
-    println!("\n{}", "Social Media Results:".green().bold());
-    println!("{}", "════════════════════".cyan());
+    println!("\n{}", style("Social Media Results:").green().bold());
+    println!("{}", style("════════════════════").cyan());
     let found_profiles: Vec<&ProfileInfo> = results.profiles.iter().filter(|p| p.found).collect();
     let not_found_count = results.profiles.len() - found_profiles.len();
     if !found_profiles.is_empty() {
-        println!("\n{} Found Profiles:", "✓".green());
+        println!("\n{} Found Profiles:", style("✓").green());
         for profile in found_profiles {
-            println!("  {} {}", "•".cyan(), profile.platform.bold());
-            println!("    {} {}", "URL:".yellow(), profile.url.blue().underline());
+            println!("  {} {}", style("•").cyan(), style(&profile.platform).bold());
+            println!("    {} {}", style("URL:").yellow(), style(&profile.url).blue().underlined());
             if !profile.metadata.is_empty() {
                 for (key, value) in &profile.metadata {
-                    println!("    {}: {}", key.yellow(), value);
+                    println!("    {}: {}", style(key).yellow(), value);
                 }
             }
         }
     }
-    println!("\n{}", "Summary:".bold());
+    println!("\n{}", style("Summary:").bold());
     println!("  Total platforms checked: {}", results.profiles.len());
-    println!("  Profiles found: {}", (results.profiles.len() - not_found_count).to_string().green());
-    println!("  Not found: {}", not_found_count.to_string().yellow());
+    println!("  Profiles found: {}", style(results.profiles.len() - not_found_count).green());
+    println!("  Not found: {}", style(not_found_count).yellow());
     if let Some(analysis) = &results.analysis {
-        println!("\n{}", "Profile Analysis:".magenta().bold());
-        println!("{}", "═════════════════".cyan());
-        println!("  Activity Level: {}", analysis.activity_level.cyan());
+        println!("\n{}", style("Profile Analysis:").magenta().bold());
+        println!("{}", style("═════════════════").cyan());
+        println!("  Activity Level: {}", style(&analysis.activity_level).cyan());
         if !analysis.common_interests.is_empty() {
             println!("  Common Interests:");
             for interest in &analysis.common_interests {
-                println!("    • {}", interest.yellow());
+                println!("    • {}", style(interest).yellow());
             }
         }
         if let Some(location) = &analysis.likely_location {
-            println!("  Likely Location: {}", location.cyan());
+            println!("  Likely Location: {}", style(location).cyan());
         }
         if let Some(age) = &analysis.profile_age {
-            println!("  Profile Age: {}", age.cyan());
+            println!("  Profile Age: {}", style(age).cyan());
         }
     }
 }
