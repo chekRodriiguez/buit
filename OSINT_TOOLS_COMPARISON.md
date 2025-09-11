@@ -75,7 +75,7 @@ Sherlock: 1-2 sec startup, 20+ MB RAM
 
 ## 🔧 Complete Module Overview
 
-### 📋 **Current BUIT Modules (v1.0.3 - 25 Modules)**
+### 📋 **Current BUIT Modules (v1.0.4 - 25 Modules)**
 
 #### **🔍 Identity Reconnaissance**
 1. **👤 username** - Multi-platform search (150+ sites)
