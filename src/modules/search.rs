@@ -1,7 +1,7 @@
 use crate::cli::SearchArgs;
 use crate::utils::http::HttpClient;
 use anyhow::Result;
-use colored::*;
+use console::style;
 use serde::{Deserialize, Serialize};
 use scraper::{Html, Selector};
 #[derive(Debug, Serialize, Deserialize)]
@@ -12,24 +12,24 @@ pub struct SearchResult {
     pub engine: String,
 }
 pub async fn run(args: SearchArgs) -> Result<()> {
-    println!("{} Searching for: {}", "🔎".cyan(), args.query.yellow().bold());
-    println!("Engine: {}", args.engine.cyan());
+    println!("{} Searching for: {}", style("🔎").cyan(), style(&args.query).yellow().bold());
+    println!("Engine: {}", style(&args.engine).cyan());
     let client = HttpClient::new()?;
     let results = match args.engine.as_str() {
         "duckduckgo" => search_duckduckgo(&client, &args.query, args.limit).await?,
         "google" => search_google(&client, &args.query, args.limit).await?,
         "bing" => search_bing(&client, &args.query, args.limit).await?,
         _ => {
-            println!("{} Unsupported search engine", "✗".red());
+            println!("{} Unsupported search engine", style("✗").red());
             return Ok(());
         }
     };
     display_results(&results);
     if args.deep {
-        println!("\n{} Deep web search enabled", "🌐".cyan());
+        println!("\n{} Deep web search enabled", style("🌐").cyan());
         let deep_results = search_deep_web(&client, &args.query).await?;
         if !deep_results.is_empty() {
-            println!("\n{}", "Deep Web Results:".magenta().bold());
+            println!("\n{}", style("Deep Web Results:").magenta().bold());
             display_results(&deep_results);
         }
     }
@@ -170,14 +170,14 @@ async fn search_deep_web(_client: &HttpClient, query: &str) -> Result<Vec<Search
     Ok(results)
 }
 fn display_results(results: &[SearchResult]) {
-    println!("\n{}", "Search Results:".green().bold());
-    println!("{}", "═══════════════".cyan());
+    println!("\n{}", style("Search Results:").green().bold());
+    println!("{}", style("═══════════════").cyan());
     for (i, result) in results.iter().enumerate() {
-        println!("\n{}. {}", (i + 1).to_string().cyan(), result.title.bold());
-        println!("   {} {}", "URL:".yellow(), result.url.blue().underline());
+        println!("\n{}. {}", style(i + 1).cyan(), style(&result.title).bold());
+        println!("   {} {}", style("URL:").yellow(), style(&result.url).blue().underlined());
         if !result.snippet.is_empty() {
             println!("   {}", result.snippet);
         }
-        println!("   {} {}", "Engine:".yellow(), result.engine.cyan());
+        println!("   {} {}", style("Engine:").yellow(), style(&result.engine).cyan());
     }
 }

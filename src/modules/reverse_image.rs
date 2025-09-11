@@ -1,17 +1,17 @@
 use crate::cli::ReverseImageArgs;
 use anyhow::Result;
-use colored::*;
+use console::style;
 use reqwest::Client;
 use std::path::Path;
 use url::Url;
 use std::fs;
 
 pub async fn run(args: ReverseImageArgs) -> Result<()> {
-    println!("{} Reverse image search: {}", "🔍".cyan(), args.image.yellow().bold());
+    println!("{} Reverse image search: {}", style("🔍").cyan(), style(&args.image).yellow().bold());
     
     let engines = parse_engines(&args.engines.unwrap_or_else(|| "google,bing".to_string()));
     
-    println!("🔎 Search engines: {}", engines.join(", ").cyan());
+    println!("🔎 Search engines: {}", engines.join(", "));
     
     // Check if input is URL or file path
     let image_data = if is_url(&args.image) {
@@ -22,7 +22,7 @@ pub async fn run(args: ReverseImageArgs) -> Result<()> {
         return Err(anyhow::anyhow!("Image not found: {}", args.image));
     };
     
-    println!("📷 Image loaded: {} bytes", image_data.len().to_string().yellow());
+    println!("📷 Image loaded: {} bytes", style(image_data.len().to_string()).yellow());
     
     for engine in engines {
         match engine.as_str() {
@@ -30,7 +30,7 @@ pub async fn run(args: ReverseImageArgs) -> Result<()> {
             "bing" => search_bing_images(&args.image, &image_data).await?,
             "tineye" => search_tineye(&args.image, &image_data).await?,
             "yandex" => search_yandex_images(&args.image, &image_data).await?,
-            _ => println!("{} Unsupported engine: {}", "⚠️".yellow(), engine),
+            _ => println!("{} Unsupported engine: {}", style("⚠️").yellow(), engine),
         }
         
         // Add delay between searches to be respectful
@@ -80,7 +80,7 @@ fn load_local_image(path: &str) -> Result<Vec<u8>> {
 }
 
 async fn search_google_images(image_source: &str, image_data: &[u8]) -> Result<()> {
-    println!("\n{} Google Images Search", "🔍".cyan());
+    println!("\n{} Google Images Search", style("🔍").cyan());
     println!("{}", "=".repeat(40));
     
     let _client = Client::new();
@@ -90,9 +90,9 @@ async fn search_google_images(image_source: &str, image_data: &[u8]) -> Result<(
     
     // For demonstration, we'll show what would be done
     // In a real implementation, you'd need to handle Google's image upload API
-    println!("🌐 Search URL: {}", search_url.blue().underline());
-    println!("📷 Image source: {}", image_source.yellow());
-    println!("📊 Image size: {} bytes", image_data.len().to_string().cyan());
+    println!("🌐 Search URL: {}", style(search_url).blue().underlined());
+    println!("📷 Image source: {}", style(image_source).yellow());
+    println!("📊 Image size: {} bytes", style(image_data.len().to_string()).cyan());
     
     // Simulate search results (in real implementation, parse Google's response)
     let mock_results = vec![
@@ -104,14 +104,14 @@ async fn search_google_images(image_source: &str, image_data: &[u8]) -> Result<(
     println!("📋 Search Results:");
     for (i, (title, url, confidence)) in mock_results.iter().enumerate() {
         let confidence_color = match confidence {
-            c if c.contains("High") => confidence.green(),
-            c if c.contains("Medium") => confidence.yellow(),
-            _ => confidence.red(),
+            c if c.contains("High") => style(confidence).green(),
+            c if c.contains("Medium") => style(confidence).yellow(),
+            _ => style(confidence).red(),
         };
         println!("  {}. {} - {} ({})", 
             i + 1, 
-            title.bold(), 
-            url.blue().underline(),
+            style(title).bold(), 
+            style(url).blue().underlined(),
             confidence_color
         );
     }
@@ -120,7 +120,7 @@ async fn search_google_images(image_source: &str, image_data: &[u8]) -> Result<(
 }
 
 async fn search_bing_images(image_source: &str, image_data: &[u8]) -> Result<()> {
-    println!("\n{} Bing Visual Search", "🔍".cyan());
+    println!("\n{} Bing Visual Search", style("🔍").cyan());
     println!("{}", "=".repeat(40));
     
     let _client = Client::new();
@@ -128,9 +128,9 @@ async fn search_bing_images(image_source: &str, image_data: &[u8]) -> Result<()>
     // Bing Visual Search API would be used here
     let search_url = "https://www.bing.com/images/search";
     
-    println!("🌐 Search URL: {}", search_url.blue().underline());
-    println!("📷 Image source: {}", image_source.yellow());
-    println!("📊 Image size: {} bytes", image_data.len().to_string().cyan());
+    println!("🌐 Search URL: {}", style(search_url).blue().underlined());
+    println!("📷 Image source: {}", style(image_source).yellow());
+    println!("📊 Image size: {} bytes", style(image_data.len().to_string()).cyan());
     
     // Mock results
     let mock_results = vec![
@@ -142,14 +142,14 @@ async fn search_bing_images(image_source: &str, image_data: &[u8]) -> Result<()>
     println!("📋 Search Results:");
     for (i, (title, url, match_type)) in mock_results.iter().enumerate() {
         let match_color = match *match_type {
-            "Exact" => match_type.green().bold(),
-            "Similar" => match_type.yellow(),
-            _ => match_type.cyan(),
+            "Exact" => style(match_type).green().bold(),
+            "Similar" => style(match_type).yellow(),
+            _ => style(match_type).cyan(),
         };
         println!("  {}. {} - {} ({})", 
             i + 1, 
-            title.bold(), 
-            url.blue().underline(),
+            style(title).bold(), 
+            style(url).blue().underlined(),
             match_color
         );
     }
@@ -158,15 +158,15 @@ async fn search_bing_images(image_source: &str, image_data: &[u8]) -> Result<()>
 }
 
 async fn search_tineye(image_source: &str, image_data: &[u8]) -> Result<()> {
-    println!("\n{} TinEye Reverse Search", "👁️".cyan());
+    println!("\n{} TinEye Reverse Search", style("👁️").cyan());
     println!("{}", "=".repeat(40));
     
     let _client = Client::new();
     
     // TinEye API would be used here (requires API key)
     println!("🌐 TinEye API endpoint");
-    println!("📷 Image source: {}", image_source.yellow());
-    println!("📊 Image size: {} bytes", image_data.len().to_string().cyan());
+    println!("📷 Image source: {}", style(image_source).yellow());
+    println!("📊 Image size: {} bytes", style(image_data.len().to_string()).cyan());
     
     // Mock TinEye-style results
     let mock_results = vec![
@@ -175,13 +175,13 @@ async fn search_tineye(image_source: &str, image_data: &[u8]) -> Result<()> {
         ("High resolution", "2020-07-08", "https://tineye-example3.com/hires.jpg"),
     ];
     
-    println!("📋 TinEye Results ({} matches found):", mock_results.len().to_string().yellow());
+    println!("📋 TinEye Results ({} matches found):", style(mock_results.len().to_string()).yellow());
     for (i, (description, date, url)) in mock_results.iter().enumerate() {
         println!("  {}. {} ({}) - {}", 
             i + 1, 
-            description.bold(),
-            date.cyan(), 
-            url.blue().underline()
+            style(description).bold(),
+            style(date).cyan(), 
+            style(style(url).blue()).underlined()
         );
     }
     
@@ -189,15 +189,15 @@ async fn search_tineye(image_source: &str, image_data: &[u8]) -> Result<()> {
 }
 
 async fn search_yandex_images(image_source: &str, image_data: &[u8]) -> Result<()> {
-    println!("\n{} Yandex Images Search", "🔍".cyan());
+    println!("\n{} Yandex Images Search", style("🔍").cyan());
     println!("{}", "=".repeat(40));
     
     let _client = Client::new();
     
     // Yandex Images reverse search
     println!("🌐 Yandex Images API");
-    println!("📷 Image source: {}", image_source.yellow());
-    println!("📊 Image size: {} bytes", image_data.len().to_string().cyan());
+    println!("📷 Image source: {}", style(image_source).yellow());
+    println!("📊 Image size: {} bytes", style(image_data.len().to_string()).cyan());
     
     // Mock Yandex results
     let mock_results = vec![
@@ -210,22 +210,22 @@ async fn search_yandex_images(image_source: &str, image_data: &[u8]) -> Result<(
     for (i, (description, url, similarity)) in mock_results.iter().enumerate() {
         let similarity_num: f32 = similarity.trim_end_matches('%').parse().unwrap_or(0.0);
         let similarity_color = if similarity_num > 90.0 {
-            similarity.green().bold()
+            style(similarity).green().bold()
         } else if similarity_num > 70.0 {
-            similarity.yellow()
+            style(similarity).yellow()
         } else {
-            similarity.red()
+            style(similarity).red()
         };
         
         println!("  {}. {} - {} ({})", 
             i + 1, 
-            description.bold(),
-            url.blue().underline(), 
+            style(description).bold(),
+            style(url).blue().underlined(), 
             similarity_color
         );
     }
     
-    println!("\n{} Note: This is a demonstration with mock results", "ℹ️".blue());
+    println!("\n{} Note: This is a demonstration with mock results", style("ℹ️").blue());
     println!("   Real implementation would require API keys and proper image uploading");
     
     Ok(())

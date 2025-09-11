@@ -1,7 +1,7 @@
 use crate::cli::DorkArgs;
 use crate::utils::http::HttpClient;
 use anyhow::Result;
-use colored::*;
+use console::style;
 use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DorkResult {
@@ -16,9 +16,9 @@ pub struct DorkEntry {
     pub snippet: String,
 }
 pub async fn run(args: DorkArgs) -> Result<()> {
-    println!("{} Running dork search", "🎯".cyan());
+    println!("{} Running dork search", style("🔍").cyan());
     let dork_query = build_dork_query(&args);
-    println!("Query: {}", dork_query.yellow().bold());
+    println!("Query: {}", style(&dork_query).yellow().bold());
     let client = HttpClient::new()?;
     let results = execute_dork(&client, &dork_query).await?;
     display_results(&results);
@@ -91,18 +91,18 @@ fn parse_dork_results(html: &str) -> Result<Vec<DorkEntry>> {
     Ok(results)
 }
 fn display_results(results: &DorkResult) {
-    println!("\n{}", "Dork Results:".green().bold());
-    println!("{}", "═════════════".cyan());
-    println!("Found {} results", results.total_found.to_string().yellow());
+    println!("\n{}", style("Dork Results:").green().bold());
+    println!("{}", style("═════════════").cyan());
+    println!("Found {} results", style(results.total_found.to_string()).yellow());
     for (i, entry) in results.results.iter().enumerate() {
-        println!("\n{}. {}", (i + 1).to_string().cyan(), entry.title.bold());
-        println!("   {} {}", "URL:".yellow(), entry.url.blue().underline());
+        println!("\n{}. {}", style(i + 1).cyan(), style(&entry.title).bold());
+        println!("   {} {}", style("URL:").yellow(), style(&entry.url).blue().underlined());
         if !entry.snippet.is_empty() {
             println!("   {}", entry.snippet);
         }
     }
-    println!("\n{}", "Common Dork Examples:".yellow().bold());
-    println!("{}", "═══════════════════".cyan());
+    println!("\n{}", style("Common Dork Examples:").yellow().bold());
+    println!("{}", style("═══════════════════").cyan());
     println!("  • site:example.com filetype:pdf - Find PDFs on a domain");
     println!("  • intitle:\"index of\" - Find directory listings");
     println!("  • inurl:admin - Find admin panels");

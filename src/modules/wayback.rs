@@ -1,7 +1,7 @@
 use crate::cli::WaybackArgs;
 use crate::utils::http::HttpClient;
 use anyhow::Result;
-use colored::*;
+use console::style;
 use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize)]
 pub struct WaybackResult {
@@ -16,7 +16,7 @@ pub struct Snapshot {
     pub status_code: Option<String>,
 }
 pub async fn run(args: WaybackArgs) -> Result<()> {
-    println!("{} Wayback Machine lookup: {}", "🕰".cyan(), args.url.yellow().bold());
+    println!("{} Wayback Machine lookup: {}", style("🕰").cyan(), style(&args.url).yellow().bold());
     let client = HttpClient::new()?;
     let mut snapshots = vec![];
     let api_url = format!("https://web.archive.org/cdx/search/cdx?url={}&output=json&limit={}",
@@ -75,21 +75,21 @@ fn format_timestamp(timestamp: &str) -> String {
     }
 }
 fn display_results(result: &WaybackResult) {
-    println!("\n{}", "Wayback Machine Results:".green().bold());
-    println!("{}", "════════════════════════".cyan());
-    println!("  {} {}", "URL:".yellow(), result.url.cyan());
-    println!("  {} {}", "Snapshots Found:".yellow(), result.total_found.to_string().green());
+    println!("\n{}", style("Wayback Machine Results:").green().bold());
+    println!("{}", style("════════════════════════").cyan());
+    println!("  {} {}", style("URL:").yellow(), style(&result.url).cyan());
+    println!("  {} {}", style("Snapshots Found:").yellow(), style(result.total_found.to_string()).green());
     if result.snapshots.is_empty() {
-        println!("\n{} No snapshots found", "✗".red());
+        println!("\n{} No snapshots found", style("✗").red());
         return;
     }
-    println!("\n{}", "Available Snapshots:".yellow());
+    println!("\n{}", style("Available Snapshots:").yellow());
     for (i, snapshot) in result.snapshots.iter().enumerate() {
         println!("{}. {} {}",
-            (i + 1).to_string().cyan(),
-            snapshot.timestamp.yellow(),
-            if snapshot.status_code.as_deref() == Some("200") { "✓".green() } else { "⚠".yellow() }
+            style((i + 1).to_string()).cyan(),
+            style(&snapshot.timestamp).yellow(),
+            if snapshot.status_code.as_deref() == Some("200") { style("✓").green() } else { style("⚠").yellow() }
         );
-        println!("   {}", snapshot.url.blue().underline());
+        println!("   {}", style(&snapshot.url).blue().underlined());
     }
 }
