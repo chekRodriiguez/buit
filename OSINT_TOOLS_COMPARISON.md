@@ -13,7 +13,7 @@
 | **💻 Memory Usage** | **~15-50 MB** | 100-300 MB | 30-80 MB | 50-150 MB | 20-60 MB |
 | **📱 Portability** | **Single binary** | Python environment | Python environment | Python framework | Python script |
 | **🌍 Cross-Platform** | ✅ Win/macOS/Linux | ✅ Linux/macOS/Win | ✅ Linux/macOS/Win | ✅ Linux/macOS/Win | ✅ Linux/macOS/Win |
-| **🎯 OSINT Modules** | **24 modules** | **200+ modules** | **~15 engines** | **90+ modules** | **1 specialized** |
+| **🎯 OSINT Modules** | **25 modules** | **200+ modules** | **~15 engines** | **90+ modules** | **1 specialized** |
 | **🔍 Focus Areas** | Complete toolkit | Complete automation | Email/domain recon | Modular framework | Username search |
 | **📊 Visualization** | **CLI + API + Reports** | Web interface | CLI only | CLI + Database | CLI only |
 | **⚙️ Configuration** | Integrated system | Web interface | Command line flags | Database | Config file |
@@ -75,7 +75,7 @@ Sherlock: 1-2 sec startup, 20+ MB RAM
 
 ## 🔧 Complete Module Overview
 
-### 📋 **Current BUIT Modules (v1.0.2 - 24 Modules)**
+### 📋 **Current BUIT Modules (v1.0.3 - 25 Modules)**
 
 #### **🔍 Identity Reconnaissance**
 1. **👤 username** - Multi-platform search (150+ sites)
@@ -94,24 +94,25 @@ Sherlock: 1-2 sec startup, 20+ MB RAM
 12. **🌐 asn-lookup** - **[NEW]** ASN mapping and organizations
 
 #### **🔐 Security & Vulnerabilities**
-13. **🔐 ssl-cert** - **[NEW]** SSL/TLS certificate analysis  
-14. **🔓 breach-check** - **[NEW]** Breach verification (HaveIBeenPwned, DeHashed)
-15. **💀 leaks** - Breach detection + password search
-16. **#️⃣ hash** - Hash identification & cracking
-17. **🌍 urlscan** - Security URL analysis
+13. **🔍 shodan** - Shodan API integration for service discovery
+14. **🔐 ssl-cert** - **[NEW]** SSL/TLS certificate analysis  
+15. **🔓 breach-check** - **[NEW]** Breach verification (HaveIBeenPwned, DeHashed)
+16. **💀 leaks** - Breach detection + password search
+17. **#️⃣ hash** - Hash identification & cracking
+18. **🌍 urlscan** - Security URL analysis
 
 #### **🕷️ Web Intelligence**
-18. **🔍 search** - Search engines (Google, DuckDuckGo, Bing)
-19. **🎯 dork** - Advanced Google Dorking with filters
-20. **⏪ wayback** - Wayback Machine history
-21. **🖼️ reverse-image** - Reverse image search
+19. **🔍 search** - Search engines (Google, DuckDuckGo, Bing)
+20. **🎯 dork** - Advanced Google Dorking with filters
+21. **⏪ wayback** - Wayback Machine history
+22. **🖼️ reverse-image** - Reverse image search
 
 #### **👨‍💻 Developer Intelligence**
-22. **📦 github** - GitHub OSINT with secret detection
-23. **📄 metadata** - Metadata extraction (images, PDF, documents)
+23. **📦 github** - GitHub OSINT with secret detection
+24. **📄 metadata** - Metadata extraction (images, PDF, documents)
 
 #### **🛠️ Utilities**
-24. **🎮 interactive** - Guided interactive mode
+25. **🎮 interactive** - Guided interactive mode
 - **⚙️ config** - Configuration & API key management
 - **📊 report** - Multi-format report generation
 - **🛠️ setup** - Automated installation & configuration
@@ -151,14 +152,14 @@ Sherlock: 1-2 sec startup, 20+ MB RAM
 
 ## 🎖️ Verdict
 
-**BUIT represents the next generation of OSINT tools** - combining 24+ comprehensive modules with modern performance, security, and deployment characteristics. 
+**BUIT represents the next generation of OSINT tools** - combining 25+ comprehensive modules with modern performance, security, and deployment characteristics. 
 
-While established tools like SpiderFoot excel in module count (200+) and theHarvester in specific use cases, **BUIT offers the best balance of feature completeness (24+ modules), performance, portability, and user experience** for modern security professionals. With built-in API server mode, interactive guidance, and multi-format reporting, BUIT addresses both manual and automated OSINT workflows.
+While established tools like SpiderFoot excel in module count (200+) and theHarvester in specific use cases, **BUIT offers the best balance of feature completeness (25+ modules), performance, portability, and user experience** for modern security professionals. With built-in API server mode, interactive guidance, and multi-format reporting, BUIT addresses both manual and automated OSINT workflows.
 
 ### 🏁 Quick Decision Matrix:
 - **Need maximum modules (200+)?** → SpiderFoot
 - **Need fastest email recon?** → theHarvester  
-- **Need modern, fast, portable toolkit (24+ modules)?** → **BUIT** 🚀
+- **Need modern, fast, portable toolkit (25+ modules)?** → **BUIT** 🚀
 - **Need API integration?** → **BUIT** (RESTful API mode)
 - **Need interactive guidance?** → **BUIT** (Interactive mode)
 - **Need multi-format reporting?** → **BUIT** (HTML/MD/PDF)
