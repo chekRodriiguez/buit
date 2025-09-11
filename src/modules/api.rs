@@ -160,7 +160,6 @@ async fn username_handler(
         format: params.format.unwrap_or_else(|| "json".to_string()),
         output: None,
         platforms: params.platforms,
-        sequential: false, // Default to parallel mode for API
     };
 
     match username::run(args.clone()).await {
