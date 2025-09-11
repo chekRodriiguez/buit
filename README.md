@@ -73,6 +73,25 @@ curl -L https://github.com/BuuDevOff/BUIT/releases/download/v1.0.4/buit-v1.0.4-l
 ./buit-linux-arm64 --help
 ```
 
+### 🌍 Global Installation (Recommended)
+
+After downloading any version above, make BUIT available system-wide:
+
+```bash
+# 🚀 Auto-setup: Adds BUIT to your PATH automatically
+./buit setup
+
+# ✅ Now use 'buit' from anywhere in your terminal!
+buit --help
+buit ip 8.8.8.8
+```
+
+**What the setup command does:**
+- 🔧 **Windows**: Adds BUIT to `%PATH%` environment variable
+- 🍎 **macOS**: Creates symlink in `/usr/local/bin/` or adds to `~/.bashrc`
+- 🐧 **Linux**: Creates symlink in `/usr/local/bin/` or adds to `~/.bashrc`
+- 🔄 **Automatic**: Detects your system and configures appropriately
+
 ### 🛠️ Build from Source
 ```bash
 # Install Rust if needed
@@ -81,9 +100,14 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 # Clone and build
 git clone https://github.com/BuuDevOff/BUIT.git && cd BUIT
 cargo build --release
+
+# Install globally
+./target/release/buit setup
 ```
 
 ## ⚡ Quick Start
+
+💡 **Pro tip**: Run `./buit setup` first to install globally, then use `buit` from anywhere!
 
 <details>
 <summary><strong>🎯 Common OSINT Tasks</strong></summary>
@@ -308,6 +332,10 @@ buit ip 8.8.8.8 --reverse --asn --geo
 
 # v1.0.4+: Everything enabled by default!  
 buit ip 8.8.8.8
+
+# 🌍 After 'buit setup' - use from anywhere:
+buit ip 1.1.1.1
+# Output: Complete analysis with ASN "AS13335 Cloudflare Inc., US"
 ```
 
 **New Features:**
