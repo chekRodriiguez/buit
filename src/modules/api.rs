@@ -677,7 +677,6 @@ async fn report_handler(
     Path(title): Path<String>,
     Query(params): Query<ApiQuery>
 ) -> Result<Json<ApiResponse<Value>>, StatusCode> {
-    let format_str = params.format.clone().unwrap_or("html".to_string());
     let args = ReportArgs {
         title: title.clone(),
         format: params.format,
