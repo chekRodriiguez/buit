@@ -1,19 +1,19 @@
 use crate::cli::MetadataArgs;
 use anyhow::Result;
-use colored::*;
+use console::style;
 use std::fs;
 use std::path::Path;
 // use kamadak_exif::{Reader, In, Tag};
-use pdf_extract::extract_text;
+use lopdf::Document;
 use serde_json::json;
 
 pub fn run(args: MetadataArgs) -> Result<()> {
-    println!("{} Extracting metadata from: {}", "📄".cyan(), args.file.yellow().bold());
+    println!("{} Extracting metadata from: {}", style("📄").cyan(), style(&args.file).yellow().bold());
     
     let path = Path::new(&args.file);
     
     if !path.exists() {
-        println!("{} File not found: {}", "❌".red(), args.file);
+        println!("{} File not found: {}", style("❌").red(), args.file);
         return Ok(());
     }
     
@@ -24,11 +24,11 @@ pub fn run(args: MetadataArgs) -> Result<()> {
         .unwrap_or("unknown")
         .to_lowercase();
     
-    println!("\n{} Basic File Information", "📋".cyan());
+    println!("\n{} Basic File Information", style("📋").cyan());
     println!("{}", "=".repeat(40));
-    println!("📁 File: {}", path.file_name().unwrap().to_string_lossy().yellow());
+    println!("📁 File: {}", style(path.file_name().unwrap().to_string_lossy()).yellow());
     println!("📏 Size: {} bytes ({:.2} KB)", file_size, file_size as f64 / 1024.0);
-    println!("🏷️  Type: {}", extension.cyan());
+    println!("🏷️  Type: {}", style(&extension).cyan());
     
     if let Ok(modified) = metadata.modified() {
         if let Ok(duration) = modified.duration_since(std::time::UNIX_EPOCH) {
@@ -40,29 +40,29 @@ pub fn run(args: MetadataArgs) -> Result<()> {
     
     match extension.as_str() {
         "jpg" | "jpeg" | "tiff" | "tif" => {
-            println!("\n{} JPEG/TIFF image detected", "📸".yellow());
-            println!("{} EXIF extraction requires kamadak-exif crate", "⚠️".yellow());
+            println!("\n{} JPEG/TIFF image detected", style("📸").yellow());
+            println!("{} EXIF extraction requires kamadak-exif crate", style("⚠️").yellow());
         }
         "pdf" => {
             extract_pdf_metadata(path)?;
         }
         "png" | "gif" | "bmp" => {
-            println!("\n{} Image file detected but no EXIF support for {}", "📸".yellow(), extension.to_uppercase());
+            println!("\n{} Image file detected but no EXIF support for {}", style("📸").yellow(), extension.to_uppercase());
         }
         "mp4" | "avi" | "mov" | "mkv" => {
-            println!("\n{} Video file detected", "🎥".yellow());
+            println!("\n{} Video file detected", style("🎥").yellow());
             // Video metadata extraction could be added here
         }
         "mp3" | "wav" | "flac" | "ogg" => {
-            println!("\n{} Audio file detected", "🎵".yellow());
+            println!("\n{} Audio file detected", style("🎵").yellow());
             // Audio metadata extraction could be added here
         }
         "doc" | "docx" | "xls" | "xlsx" | "ppt" | "pptx" => {
-            println!("\n{} Office document detected", "📄".yellow());
+            println!("\n{} Office document detected", style("📄").yellow());
             // Office document metadata could be added here
         }
         _ => {
-            println!("\n{} No specific metadata extractor for file type: {}", "⚠️".yellow(), extension.to_uppercase());
+            println!("\n{} No specific metadata extractor for file type: {}", style("⚠️").yellow(), extension.to_uppercase());
         }
     }
     
@@ -78,36 +78,73 @@ pub fn run(args: MetadataArgs) -> Result<()> {
 // EXIF extraction function - disabled until kamadak-exif is added
 /*
 fn extract_image_metadata(path: &Path) -> Result<()> {
-    println!("\n{} EXIF Data", "📸".cyan());
+    println!("\n{} EXIF Data", "📸style(").cyan());
     println!("{}", "=".repeat(40));
-    println!("{} EXIF extraction requires additional dependencies", "⚠️".yellow());
+    println!("{} EXIF extraction requires additional dependencies", style("⚠️").yellow());
     Ok(())
 }
 */
 
 fn extract_pdf_metadata(path: &Path) -> Result<()> {
-    println!("\n{} PDF Metadata", "📄".cyan());
+    println!("\n{} PDF Metadata", style("📄").cyan());
     println!("{}", "=".repeat(40));
     
-    match extract_text(path) {
-        Ok(text) => {
-            let word_count = text.split_whitespace().count();
-            let char_count = text.chars().count();
-            let page_estimate = std::cmp::max(1, char_count / 2000);
+    match Document::load(path) {
+        Ok(doc) => {
+            let page_count = doc.get_pages().len();
+            println!("📊 PDF Statistics:");
+            println!("   Pages: {}", style(page_count.to_string()).yellow());
             
-            println!("📊 Text Statistics:");
-            println!("   Words: {}", word_count.to_string().yellow());
-            println!("   Characters: {}", char_count.to_string().yellow());
-            println!("   Estimated Pages: {}", page_estimate.to_string().yellow());
-            
-            if text.len() > 200 {
-                println!("📝 Text Preview:");
-                println!("   {}", text.chars().take(200).collect::<String>().trim());
-                println!("   {}...", "".dimmed());
+            // Extract basic PDF info
+            if let Ok(info) = doc.trailer.get(b"Info") {
+                if let Ok(info_dict) = info.as_dict() {
+                    for (key, value) in info_dict.iter() {
+                        if let Ok(key_str) = std::str::from_utf8(key) {
+                            match key_str {
+                                "Title" => {
+                                    if let Ok(title_bytes) = value.as_str() {
+                                        if let Ok(title_str) = std::str::from_utf8(title_bytes) {
+                                            println!("   Title: {}", style(title_str).cyan());
+                                        }
+                                    }
+                                }
+                                "Author" => {
+                                    if let Ok(author_bytes) = value.as_str() {
+                                        if let Ok(author_str) = std::str::from_utf8(author_bytes) {
+                                            println!("   Author: {}", style(author_str).cyan());
+                                        }
+                                    }
+                                }
+                                "Subject" => {
+                                    if let Ok(subject_bytes) = value.as_str() {
+                                        if let Ok(subject_str) = std::str::from_utf8(subject_bytes) {
+                                            println!("   Subject: {}", style(subject_str).cyan());
+                                        }
+                                    }
+                                }
+                                "Creator" => {
+                                    if let Ok(creator_bytes) = value.as_str() {
+                                        if let Ok(creator_str) = std::str::from_utf8(creator_bytes) {
+                                            println!("   Creator: {}", style(creator_str).cyan());
+                                        }
+                                    }
+                                }
+                                "Producer" => {
+                                    if let Ok(producer_bytes) = value.as_str() {
+                                        if let Ok(producer_str) = std::str::from_utf8(producer_bytes) {
+                                            println!("   Producer: {}", style(producer_str).cyan());
+                                        }
+                                    }
+                                }
+                                _ => {}
+                            }
+                        }
+                    }
+                }
             }
         }
         Err(e) => {
-            println!("{} Could not extract PDF text: {}", "⚠️".yellow(), e);
+            println!("{} Could not read PDF: {}", style("⚠️").yellow(), e);
         }
     }
     
@@ -133,7 +170,7 @@ fn output_json_format(path: &Path, file_size: u64, extension: &str) -> Result<()
         }
     }
     
-    println!("\n{} JSON Output:", "💾".cyan());
+    println!("\n{} JSON Output:", style("💾").cyan());
     println!("{}", serde_json::to_string_pretty(&json_output)?);
     
     Ok(())

@@ -1,7 +1,7 @@
 use crate::cli::GithubArgs;
 use crate::utils::http::HttpClient;
 use anyhow::Result;
-use colored::*;
+use console::style;
 use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GitHubResult {
@@ -40,10 +40,10 @@ pub struct Secret {
     pub line: u32,
 }
 pub async fn run(args: GithubArgs) -> Result<()> {
-    println!("{} GitHub OSINT: {}", "🐙".cyan(), args.target.yellow().bold());
+    println!("{} GitHub OSINT: {}", style("🔍").cyan(), style(&args.target).yellow().bold());
     let client = HttpClient::new()?;
     let username = extract_username(&args.target);
-    println!("Analyzing user: {}", username.cyan());
+    println!("Analyzing user: {}", style(&username).cyan());
     let mut result = GitHubResult {
         target: args.target.clone(),
         user_info: None,
@@ -52,11 +52,11 @@ pub async fn run(args: GithubArgs) -> Result<()> {
     };
     result.user_info = get_user_info(&client, &username).await?;
     if args.repos {
-        println!("\n{} Fetching repositories...", "📁".cyan());
+        println!("\n{} Fetching repositories...", style("📁").cyan());
         result.repositories = get_repositories(&client, &username).await?;
     }
     if args.secrets {
-        println!("\n{} Scanning for secrets...", "🔍".cyan());
+        println!("\n{} Scanning for secrets...", style("🔒").cyan());
         result.secrets_found = scan_for_secrets(&client, &username).await?;
     }
     display_results(&result);
@@ -116,13 +116,13 @@ async fn get_user_info(client: &HttpClient, username: &str) -> Result<Option<Use
                             .unwrap_or(0) as u32,
                     }));
                 } else {
-                    println!("{} User not found: {}", "✗".red(), username);
+                    println!("{} User not found: {}", style("✗").red(), username);
                     return Ok(None);
                 }
             }
         }
         Err(_) => {
-            println!("{} API request failed, using demo data", "⚠".yellow());
+            println!("{} API request failed, using demo data", style("⚠").yellow());
         }
     }
     Ok(Some(UserInfo {
@@ -177,7 +177,7 @@ async fn get_repositories(client: &HttpClient, username: &str) -> Result<Vec<Rep
             }
         }
         Err(_) => {
-            println!("{} Repositories API request failed", "⚠".yellow());
+            println!("{} Repositories API request failed", style("⚠").yellow());
         }
     }
     repos.push(Repository {
@@ -208,55 +208,55 @@ async fn scan_for_secrets(_client: &HttpClient, username: &str) -> Result<Vec<Se
     Ok(secrets)
 }
 fn display_results(result: &GitHubResult) {
-    println!("\n{}", "GitHub OSINT Results:".green().bold());
-    println!("{}", "════════════════════".cyan());
+    println!("\n{}", style("GitHub OSINT Results:").green().bold());
+    println!("{}", style("════════════════════").cyan());
     if let Some(user) = &result.user_info {
-        println!("  {} {}", "Username:".yellow(), user.login.cyan());
+        println!("  {} {}", style("Username:").yellow(), style(&user.login).cyan());
         if let Some(name) = &user.name {
-            println!("  {} {}", "Name:".yellow(), name.cyan());
+            println!("  {} {}", style("Name:").yellow(), style(name).cyan());
         }
         if let Some(bio) = &user.bio {
-            println!("  {} {}", "Bio:".yellow(), bio);
+            println!("  {} {}", style("Bio:").yellow(), bio);
         }
         if let Some(location) = &user.location {
-            println!("  {} {}", "Location:".yellow(), location.cyan());
+            println!("  {} {}", style("Location:").yellow(), style(location).cyan());
         }
         if let Some(email) = &user.email {
-            println!("  {} {}", "Email:".yellow(), email.cyan());
+            println!("  {} {}", style("Email:").yellow(), style(email).cyan());
         }
         if let Some(company) = &user.company {
-            println!("  {} {}", "Company:".yellow(), company.cyan());
+            println!("  {} {}", style("Company:").yellow(), style(company).cyan());
         }
         println!("  {} {} public, {} followers, {} following",
-            "Stats:".yellow(),
-            user.public_repos.to_string().green(),
-            user.followers.to_string().green(),
-            user.following.to_string().green()
+            style("Stats:").yellow(),
+            style(user.public_repos.to_string()).green(),
+            style(user.followers.to_string()).green(),
+            style(user.following.to_string()).green()
         );
     }
     if !result.repositories.is_empty() {
-        println!("\n{}", "Repositories:".yellow());
+        println!("\n{}", style("Repositories:").yellow());
         for repo in &result.repositories {
             println!("  • {} (⭐ {}, 🍴 {})",
-                repo.name.cyan().bold(),
+                style(&repo.name).cyan().bold(),
                 repo.stars,
                 repo.forks
             );
             if let Some(desc) = &repo.description {
-                println!("    {}", desc.dimmed());
+                println!("    {}", style(desc).dim());
             }
             if let Some(lang) = &repo.language {
-                println!("    Language: {}", lang.green());
+                println!("    Language: {}", style(lang).green());
             }
-            println!("    {}", repo.url.blue().underline());
+            println!("    {}", style(&repo.url).blue().underlined());
         }
     }
     if !result.secrets_found.is_empty() {
-        println!("\n{}", "⚠ Potential Secrets Found:".red().bold());
+        println!("\n{}", style("⚠ Potential Secrets Found:").red().bold());
         for secret in &result.secrets_found {
-            println!("  {} {}:{}", "⚠".red(), secret.repo.yellow(), secret.line);
-            println!("    File: {}", secret.file.cyan());
-            println!("    Pattern: {}", secret.pattern.red());
+            println!("  {} {}:{}", style("⚠").red(), style(&secret.repo).yellow(), secret.line);
+            println!("    File: {}", style(&secret.file).cyan());
+            println!("    Pattern: {}", style(&secret.pattern).red());
         }
     }
 }
