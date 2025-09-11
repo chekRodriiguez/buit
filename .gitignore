@@ -38,3 +38,5 @@ config.toml
 
 # Claude AI files
 /.claude/
+
+/release/
