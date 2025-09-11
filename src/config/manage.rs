@@ -72,6 +72,7 @@ pub fn run(args: ConfigArgs) -> Result<()> {
             }
             println!("  Retry Count: {}", config.settings.retry_count);
             println!("  Rate Limit Delay: {}ms", config.settings.rate_limit_delay);
+            println!("  Auto Update: {}", if config.settings.auto_update { style("✓ Enabled").green() } else { style("✗ Disabled").red() });
         }
         
         ConfigAction::Test { service } => {
@@ -86,6 +87,23 @@ pub fn run(args: ConfigArgs) -> Result<()> {
                 for (service_name, _) in &config.api_keys {
                     println!("  {} {}", style("✓").green(), style(service_name).cyan());
                 }
+            }
+        }
+        
+        ConfigAction::SetAutoUpdate { enabled } => {
+            let enabled_bool = match enabled.to_lowercase().as_str() {
+                "on" | "true" | "yes" | "1" => true,
+                "off" | "false" | "no" | "0" => false,
+                _ => {
+                    println!("{} Invalid value. Use 'on' or 'off'", style("✗").red());
+                    return Ok(());
+                }
+            };
+            config.set_auto_update(enabled_bool)?;
+            if enabled_bool {
+                println!("{} Auto-update enabled - BUIT will check for updates at startup", style("✓").green());
+            } else {
+                println!("{} Auto-update disabled - Use 'buit update' to check manually", style("✓").green());
             }
         }
     }

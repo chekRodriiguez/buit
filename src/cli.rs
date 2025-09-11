@@ -1,8 +1,8 @@
 use clap::{Parser, Subcommand};
 #[derive(Parser)]
 #[command(name = "buit")]
-#[command(author = "BuuDevOff <buudevoff@example.com>")]
-#[command(version = "1.0.4")]
+#[command(author = "BuuDevOff <contact@buudevoff.fr>")]
+#[command(version = "1.0.5")]
 #[command(about = "BUIT - Buu Undercover Intelligence Toolkit - Advanced OSINT framework for security professionals", long_about = "BUIT is a comprehensive Open Source Intelligence (OSINT) toolkit designed for security professionals, researchers, and ethical hackers. This tool provides advanced reconnaissance capabilities for authorized security testing and investigations.
 
 🌟 Star the repo: https://github.com/BuuDevOff/BUIT
@@ -78,6 +78,8 @@ pub enum Commands {
     SslCert(SslCertArgs),
     #[command(about = "Breach database check")]
     BreachCheck(BreachCheckArgs),
+    #[command(about = "Update BUIT to latest version")]
+    Update(UpdateArgs),
 }
 #[derive(Parser, Clone)]
 pub struct UsernameArgs {
@@ -175,6 +177,11 @@ pub enum ConfigAction {
     Test {
         #[arg(help = "Service to test")]
         service: Option<String>,
+    },
+    #[command(about = "Set auto-update settings", name = "autoupdate")]
+    SetAutoUpdate {
+        #[arg(help = "Enable or disable auto-update (on/off)")]
+        enabled: String,
     },
 }
 #[derive(Parser, Clone)]
@@ -355,4 +362,12 @@ pub struct BreachCheckArgs {
     pub intelx: bool,
     #[arg(short, long, help = "Check all available sources")]
     pub all: bool,
+}
+
+#[derive(Parser, Clone)]
+pub struct UpdateArgs {
+    #[arg(long, help = "Only check for updates without installing")]
+    pub check_only: bool,
+    #[arg(long, help = "Automatically confirm update without prompting")]
+    pub auto_confirm: bool,
 }

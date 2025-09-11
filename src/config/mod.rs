@@ -22,6 +22,7 @@ pub struct Settings {
     pub proxy_auth: Option<ProxyAuth>,
     pub retry_count: usize,
     pub rate_limit_delay: u64,
+    pub auto_update: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -54,6 +55,7 @@ impl Default for Config {
                 proxy_auth: None,
                 retry_count: 3,
                 rate_limit_delay: 100,
+                auto_update: true,
             },
         }
     }
@@ -134,6 +136,11 @@ impl Config {
     
     pub fn set_api_key(&mut self, service: String, key: String) -> Result<()> {
         self.api_keys.insert(service, key);
+        self.save()
+    }
+    
+    pub fn set_auto_update(&mut self, enabled: bool) -> Result<()> {
+        self.settings.auto_update = enabled;
         self.save()
     }
 }

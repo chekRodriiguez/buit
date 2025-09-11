@@ -27,3 +27,4 @@ pub mod reverse_dns;
 pub mod asn_lookup;
 pub mod ssl_cert_simple;
 pub mod breach_check;
+pub mod autoupdater;

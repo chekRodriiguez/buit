@@ -124,6 +124,12 @@ async fn main() -> Result<()> {
         return modules::api::start_api_server(cli.port).await;
     }
     
+    // Check for updates at startup if not in API mode
+    if let Err(_e) = modules::autoupdater::check_for_updates_at_startup().await {
+        #[cfg(debug_assertions)]
+        eprintln!("Update check error: {}", _e);
+    }
+    
     let command = match cli.command {
         Some(cmd) => cmd,
         None => {
@@ -218,6 +224,9 @@ async fn main() -> Result<()> {
         }
         cli::Commands::BreachCheck(args) => {
             modules::breach_check::run(args).await?;
+        }
+        cli::Commands::Update(args) => {
+            modules::autoupdater::run(args).await?;
         }
     }
     Ok(())

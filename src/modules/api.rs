@@ -143,7 +143,7 @@ fn create_router() -> Router {
 async fn health_handler() -> Json<ApiResponse<HealthResponse>> {
     let health = HealthResponse {
         status: "ok".to_string(),
-        version: "1.0.4".to_string(),
+        version: "1.0.5".to_string(),
         uptime: std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
@@ -507,7 +507,7 @@ async fn leaks_handler(
 async fn docs_handler() -> Json<Value> {
     let docs = json!({
         "title": "BUIT API Documentation",
-        "version": "1.0.4",
+        "version": "1.0.5",
         "description": "REST API for BUIT OSINT Toolkit",
         "endpoints": [
             {
