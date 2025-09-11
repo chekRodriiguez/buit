@@ -2,7 +2,7 @@ use clap::{Parser, Subcommand};
 #[derive(Parser)]
 #[command(name = "buit")]
 #[command(author = "BuuDevOff <buudevoff@example.com>")]
-#[command(version = "1.0.2")]
+#[command(version = "1.0.4")]
 #[command(about = "BUIT - Buu Undercover Intelligence Toolkit - Advanced OSINT framework for security professionals", long_about = "BUIT is a comprehensive Open Source Intelligence (OSINT) toolkit designed for security professionals, researchers, and ethical hackers. This tool provides advanced reconnaissance capabilities for authorized security testing and investigations.
 
 🌟 Star the repo: https://github.com/BuuDevOff/BUIT
