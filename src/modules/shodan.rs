@@ -2,14 +2,17 @@ use crate::cli::ShodanArgs;
 use crate::utils::http::HttpClient;
 use crate::config::Config;
 use anyhow::Result;
-use colored::*;
+use console::style;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ShodanResult {
     pub query: String,
     pub results: Vec<ShodanHost>,
     pub total_found: usize,
 }
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ShodanHost {
     pub ip: String,
@@ -20,177 +23,210 @@ pub struct ShodanHost {
     pub org: String,
     pub vulns: Vec<String>,
 }
+
 pub async fn run(args: ShodanArgs) -> Result<()> {
-    println!("{} Shodan search: {}", "🔍".cyan(), args.query.yellow().bold());
-    let config = Config::load()?;
-    if config.get_api_key("shodan").is_none() {
-        println!("{} No Shodan API key configured. Use: osint_toolkit config set-key shodan YOUR_API_KEY", "⚠".yellow());
-        println!("{} Showing demo data instead...", "ℹ".cyan());
-    }
+    println!("{} Shodan search: {}", 
+        style("🔍").cyan(), 
+        style(&args.query).yellow().bold()
+    );
+    
+    let config = Config::load().unwrap_or_default();
+    let api_key = match config.get_api_key("shodan") {
+        Some(key) => key,
+        None => {
+            println!("{} No Shodan API key configured.", style("⚠").yellow());
+            println!("{} Get a free API key at: https://account.shodan.io/register", style("💡").cyan());
+            println!("{} Then configure it with: buit config set-key shodan YOUR_API_KEY", style("💡").cyan());
+            return Ok(());
+        }
+    };
+    
     let client = HttpClient::new()?;
-    let results = search_shodan(&client, &args.query, args.limit.unwrap_or(10), args.vulns).await?;
+    let results = search_shodan(&client, &api_key, &args.query, args.limit.unwrap_or(10), args.vulns).await?;
     display_results(&results);
     Ok(())
 }
-async fn search_shodan(client: &HttpClient, query: &str, limit: usize, include_vulns: bool) -> Result<ShodanResult> {
-    let config = Config::load()?;
+
+async fn search_shodan(
+    client: &HttpClient, 
+    api_key: &str, 
+    query: &str, 
+    limit: usize, 
+    include_vulns: bool
+) -> Result<ShodanResult> {
+    let url = format!(
+        "https://api.shodan.io/shodan/host/search?key={}&query={}&limit={}", 
+        api_key, 
+        urlencoding::encode(query), 
+        limit
+    );
     
-    if let Some(api_key) = config.get_api_key("shodan") {
-        let url = format!("https://api.shodan.io/shodan/host/search?key={}&query={}&limit={}", 
-            api_key, urlencoding::encode(query), limit);
-        
-        match client.get(&url).await {
-            Ok(response) => {
-                if let Ok(data) = serde_json::from_str::<serde_json::Value>(&response) {
-                    let mut hosts = vec![];
-                    
-                    if let Some(matches) = data.get("matches").and_then(|v| v.as_array()) {
-                        for match_data in matches.iter().take(limit) {
-                            let ip = match_data.get("ip_str")
-                                .and_then(|v| v.as_str())
-                                .unwrap_or("Unknown")
-                                .to_string();
-                            
-                            let port = match_data.get("port")
-                                .and_then(|v| v.as_u64())
-                                .unwrap_or(80) as u16;
-                            
-                            let service = match_data.get("product")
-                                .and_then(|v| v.as_str())
-                                .unwrap_or("Unknown")
-                                .to_string();
-                            
-                            let banner = match_data.get("data")
-                                .and_then(|v| v.as_str())
-                                .unwrap_or("")
-                                .lines()
-                                .take(3)
-                                .collect::<Vec<_>>()
-                                .join("\n");
-                            
-                            let location = format!("{}, {}",
-                                match_data.get("location").and_then(|l| l.get("city")).and_then(|v| v.as_str()).unwrap_or("Unknown"),
-                                match_data.get("location").and_then(|l| l.get("country_name")).and_then(|v| v.as_str()).unwrap_or("Unknown")
-                            );
-                            
-                            let org = match_data.get("org")
-                                .and_then(|v| v.as_str())
-                                .unwrap_or("Unknown")
-                                .to_string();
-                            
-                            let mut vulns = vec![];
-                            if include_vulns {
-                                if let Some(vulns_data) = match_data.get("vulns").and_then(|v| v.as_object()) {
-                                    vulns = vulns_data.keys().cloned().collect();
-                                }
-                            }
-                            
-                            hosts.push(ShodanHost {
-                                ip,
-                                port,
-                                service,
-                                banner,
-                                location,
-                                org,
-                                vulns,
-                            });
-                        }
-                    }
-                    
-                    let total = data.get("total")
-                        .and_then(|v| v.as_u64())
-                        .unwrap_or(0) as usize;
-                    
-                    return Ok(ShodanResult {
-                        query: query.to_string(),
-                        total_found: total,
-                        results: hosts,
-                    });
-                }
-            }
-            Err(e) => {
-                println!("{} Shodan API error: {}", "⚠".yellow(), e);
-                println!("{} Falling back to demo data...", "ℹ".cyan());
-            }
+    println!("{} Querying Shodan API...", style("🌐").cyan());
+    
+    let response = match client.get(&url).await {
+        Ok(resp) => resp,
+        Err(e) => {
+            println!("{} Failed to query Shodan API: {}", style("❌").red(), e);
+            println!("{} Check your API key and internet connection", style("💡").cyan());
+            return Ok(ShodanResult {
+                query: query.to_string(),
+                results: Vec::new(),
+                total_found: 0,
+            });
         }
-    }
+    };
     
-    println!("{} Using demo data due to API limitations", "ℹ".cyan());
-    
-    let mut hosts = vec![];
-    for i in 0..limit.min(5) {
-        let mut vulns = vec![];
-        if include_vulns {
-            vulns.extend_from_slice(&[
-                "CVE-2021-44228".to_string(),
-                "CVE-2022-0847".to_string(),
-            ]);
+    let data: Value = match serde_json::from_str(&response) {
+        Ok(json) => json,
+        Err(e) => {
+            println!("{} Failed to parse Shodan response: {}", style("❌").red(), e);
+            if response.contains("Invalid API key") {
+                println!("{} Your API key appears to be invalid", style("⚠").yellow());
+            } else if response.contains("No information available") {
+                println!("{} No results found for query: {}", style("ℹ").cyan(), query);
+            }
+            return Ok(ShodanResult {
+                query: query.to_string(),
+                results: Vec::new(),
+                total_found: 0,
+            });
         }
-        hosts.push(ShodanHost {
-            ip: format!("192.168.1.{}", i + 10),
-            port: match i {
-                0 => 80,
-                1 => 443,
-                2 => 22,
-                3 => 21,
-                _ => 8080,
-            },
-            service: match i {
-                0 => "nginx/1.18.0".to_string(),
-                1 => "Apache/2.4.41".to_string(),
-                2 => "OpenSSH 8.2".to_string(),
-                3 => "ProFTPD 1.3.6".to_string(),
-                _ => "Unknown".to_string(),
-            },
-            banner: format!("HTTP/1.1 200 OK\r\nServer: {}\r\n", match i {
-                0 => "nginx",
-                1 => "Apache",
-                _ => "Unknown"
-            }),
-            location: match i % 3 {
-                0 => "United States".to_string(),
-                1 => "Germany".to_string(),
-                _ => "France".to_string(),
-            },
-            org: format!("Example Corp {}", i + 1),
-            vulns,
+    };
+    
+    // Check for API errors
+    if let Some(error) = data.get("error") {
+        println!("{} Shodan API error: {}", style("❌").red(), error.as_str().unwrap_or("Unknown error"));
+        return Ok(ShodanResult {
+            query: query.to_string(),
+            results: Vec::new(),
+            total_found: 0,
         });
     }
     
+    let mut hosts = Vec::new();
+    
+    if let Some(matches) = data.get("matches").and_then(|v| v.as_array()) {
+        for match_data in matches.iter().take(limit) {
+            let ip = match_data.get("ip_str")
+                .and_then(|v| v.as_str())
+                .unwrap_or("Unknown")
+                .to_string();
+            
+            let port = match_data.get("port")
+                .and_then(|v| v.as_u64())
+                .unwrap_or(80) as u16;
+            
+            let service = match_data.get("product")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+                .or_else(|| match_data.get("_shodan").and_then(|s| s.get("module")).and_then(|v| v.as_str()).map(|s| s.to_string()))
+                .unwrap_or_else(|| format!("Port {}", port));
+            
+            let banner = match_data.get("data")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .lines()
+                .take(3)
+                .collect::<Vec<_>>()
+                .join("\\n");
+            
+            let location = if let Some(loc) = match_data.get("location") {
+                format!("{}, {}",
+                    loc.get("city").and_then(|v| v.as_str()).unwrap_or("Unknown"),
+                    loc.get("country_name").and_then(|v| v.as_str()).unwrap_or("Unknown")
+                )
+            } else {
+                "Unknown".to_string()
+            };
+            
+            let org = match_data.get("org")
+                .and_then(|v| v.as_str())
+                .unwrap_or("Unknown")
+                .to_string();
+            
+            let mut vulns = Vec::new();
+            if include_vulns {
+                if let Some(vulns_data) = match_data.get("vulns").and_then(|v| v.as_object()) {
+                    vulns = vulns_data.keys().cloned().collect();
+                }
+            }
+            
+            hosts.push(ShodanHost {
+                ip,
+                port,
+                service,
+                banner,
+                location,
+                org,
+                vulns,
+            });
+        }
+    }
+    
+    let total = data.get("total")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(0) as usize;
+    
     Ok(ShodanResult {
         query: query.to_string(),
-        total_found: hosts.len(),
+        total_found: total,
         results: hosts,
     })
 }
+
 fn display_results(result: &ShodanResult) {
-    println!("\n{}", "Shodan Search Results:".green().bold());
-    println!("{}", "═════════════════════".cyan());
-    println!("  {} {}", "Query:".yellow(), result.query.cyan());
-    println!("  {} {}", "Results Found:".yellow(), result.total_found.to_string().green());
+    println!("\n{}", style("Shodan Search Results:").green().bold());
+    println!("{}", style("═════════════════════").cyan());
+    println!("  {} {}", style("Query:").yellow(), style(&result.query).cyan());
+    println!("  {} {}", style("Total Found:").yellow(), style(result.total_found.to_string()).green());
+    println!("  {} {}", style("Showing:").yellow(), style(result.results.len().to_string()).green());
+    
     if result.results.is_empty() {
-        println!("\n{} No results found", "✗".red());
+        println!("\n{} No results found", style("✗").red());
+        println!("{} Try different search terms like:", style("💡").cyan());
+        println!("  • apache");
+        println!("  • nginx"); 
+        println!("  • ssh");
+        println!("  • country:US apache");
         return;
     }
+    
     for (i, host) in result.results.iter().enumerate() {
         println!("\n{}. {} {}",
-            (i + 1).to_string().cyan(),
-            "Host:".yellow(),
-            host.ip.cyan().bold()
+            style((i + 1).to_string()).cyan(),
+            style("Host:").yellow(),
+            style(&host.ip).cyan().bold()
         );
-        println!("   {} {}", "Port:".yellow(), host.port.to_string().green());
-        println!("   {} {}", "Service:".yellow(), host.service.cyan());
-        println!("   {} {}", "Location:".yellow(), host.location.cyan());
-        println!("   {} {}", "Organization:".yellow(), host.org.cyan());
+        println!("   {} {}", style("Port:").yellow(), style(host.port.to_string()).green());
+        println!("   {} {}", style("Service:").yellow(), style(&host.service).cyan());
+        println!("   {} {}", style("Location:").yellow(), style(&host.location).cyan());
+        println!("   {} {}", style("Organization:").yellow(), style(&host.org).cyan());
+        
         if !host.vulns.is_empty() {
-            println!("   {} {}", "Vulnerabilities:".red(), host.vulns.join(", ").red());
+            println!("   {} {}", 
+                style("Vulnerabilities:").red().bold(),
+                style(format!("{} found", host.vulns.len())).red()
+            );
+            for vuln in &host.vulns {
+                println!("     • {}", style(vuln).red());
+            }
         }
+        
         if !host.banner.is_empty() {
-            println!("   {} {}", "Banner:".yellow(), host.banner.dimmed());
+            println!("   {} {}", style("Banner:").yellow(), 
+                style(&host.banner.replace("\\n", " | ")).dim());
         }
     }
-    println!("\n{}", "Security Notes:".yellow().bold());
-    println!("• Always ensure you have permission before scanning");
-    println!("• Consider firewall rules and rate limiting");
-    println!("• Verify vulnerabilities with additional tools");
+    
+    println!("\n{}", style("Usage Examples:").yellow().bold());
+    println!("• buit shodan \"apache\"           - Find Apache servers");
+    println!("• buit shodan \"country:US ssh\"   - SSH in US"); 
+    println!("• buit shodan \"port:22\"          - All SSH services");
+    println!("• buit shodan \"nginx country:FR\" - Nginx in France");
+    println!("• buit shodan \"webcam\"           - Find webcams");
+    
+    println!("\n{}", style("Security Notes:").yellow().bold());
+    println!("• This data is publicly available via Shodan");
+    println!("• Use responsibly for security research only");
+    println!("• Respect rate limits (free tier: 100 queries/month)");
 }

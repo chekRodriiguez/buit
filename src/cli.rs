@@ -44,8 +44,8 @@ pub enum Commands {
     Metadata(MetadataArgs),
     #[command(about = "Enumerate subdomains")]
     Subdomain(SubdomainArgs),
-    // #[command(about = "Shodan search")]
-    // Shodan(ShodanArgs),
+    #[command(about = "Native service discovery (Shodan-like)")]
+    Shodan(ShodanArgs),
     #[command(about = "Port scanning")]
     Portscan(PortscanArgs),
     #[command(about = "WHOIS lookup")]
@@ -235,15 +235,15 @@ pub struct SubdomainArgs {
     #[arg(long, help = "Skip availability testing for faster results")]
     pub skip_alive_check: bool,
 }
-// #[derive(Parser, Clone)]
-// pub struct ShodanArgs {
-//     #[arg(help = "Search query")]
-//     pub query: String,
-//     #[arg(short, long, help = "Number of results")]
-//     pub limit: Option<usize>,
-//     #[arg(short, long, help = "Include vulnerability info")]
-//     pub vulns: bool,
-// }
+#[derive(Parser, Clone)]
+pub struct ShodanArgs {
+    #[arg(help = "Search query (IP addresses and/or service names)")]
+    pub query: String,
+    #[arg(short, long, help = "Maximum number of results", default_value = "10")]
+    pub limit: Option<usize>,
+    #[arg(short, long, help = "Include vulnerability scanning (not implemented)")]
+    pub vulns: bool,
+}
 #[derive(Parser, Clone)]
 pub struct PortscanArgs {
     #[arg(help = "Target IP or hostname")]

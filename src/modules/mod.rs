@@ -9,7 +9,7 @@ pub mod domain;
 pub mod leaks;
 pub mod metadata;
 pub mod subdomain;
-// pub mod shodan;
+pub mod shodan;
 pub mod portscan;
 pub mod whois;
 pub mod reverse_image;

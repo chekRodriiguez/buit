@@ -169,9 +169,9 @@ async fn main() -> Result<()> {
         cli::Commands::Subdomain(args) => {
             modules::subdomain::run(args).await?;
         }
-        // cli::Commands::Shodan(args) => {
-        //     modules::shodan::run(args).await?;
-        // }
+        cli::Commands::Shodan(args) => {
+            modules::shodan::run(args).await?;
+        }
         cli::Commands::Portscan(args) => {
             modules::portscan::run(args).await?;
         }
