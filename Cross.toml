@@ -1,0 +1,21 @@
+[build]
+# Cross-compilation configuration for BUIT
+
+[target.x86_64-unknown-linux-gnu]
+image = "ghcr.io/cross-rs/cross:x86_64-unknown-linux-gnu"
+
+[target.i686-unknown-linux-gnu]
+image = "ghcr.io/cross-rs/cross:i686-unknown-linux-gnu"
+
+[target.aarch64-unknown-linux-gnu]
+image = "ghcr.io/cross-rs/cross:aarch64-unknown-linux-gnu"
+
+[target.armv7-unknown-linux-gnueabihf]
+image = "ghcr.io/cross-rs/cross:armv7-unknown-linux-gnueabihf"
+
+# macOS targets - cross doesn't support these well, will fallback to cargo
+[target.x86_64-apple-darwin]
+# Skip cross for macOS targets as they require macOS SDK
+
+[target.aarch64-apple-darwin]
+# Skip cross for macOS targets as they require macOS SDK
