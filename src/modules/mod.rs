@@ -9,7 +9,7 @@ pub mod domain;
 pub mod leaks;
 pub mod metadata;
 pub mod subdomain;
-pub mod shodan;
+// pub mod shodan;
 pub mod portscan;
 pub mod whois;
 pub mod reverse_image;
@@ -21,3 +21,9 @@ pub mod geoip;
 pub mod report;
 pub mod interactive;
 pub mod api;
+
+// New high-priority modules
+pub mod reverse_dns;
+pub mod asn_lookup;
+pub mod ssl_cert_simple;
+pub mod breach_check;
