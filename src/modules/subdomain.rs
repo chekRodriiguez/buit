@@ -2,10 +2,11 @@ use crate::cli::SubdomainArgs;
 use crate::utils::http::HttpClient;
 use crate::config::Config;
 use anyhow::Result;
-use colored::*;
+use console::style;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 use indicatif::{ProgressBar, ProgressStyle};
 use tokio::sync::Semaphore;
 use futures::stream::{StreamExt};
@@ -27,12 +28,16 @@ pub struct SubdomainInfo {
 struct CrtShEntry {
     name_value: String,
 }
+// Constants for memory management
+const MAX_SUBDOMAINS: usize = 50_000;
+const MAX_METHODS: usize = 10;
+
 pub async fn run(args: SubdomainArgs) -> Result<()> {
-    println!("{} Enumerating subdomains for: {}", "🔍".cyan(), args.domain.yellow().bold());
+    println!("{} Enumerating subdomains for: {}", style("🔍").cyan(), style(&args.domain).yellow().bold());
     let config = Config::load()?;
     let client = HttpClient::new()?;
     let mut all_subdomains = HashSet::new();
-    let mut methods_used = vec![];
+    let mut methods_used = Vec::with_capacity(MAX_METHODS);
     let pb = ProgressBar::new_spinner();
     pb.set_style(
         ProgressStyle::default_spinner()
@@ -46,18 +51,33 @@ pub async fn run(args: SubdomainArgs) -> Result<()> {
         methods_used.push("Certificate Transparency".to_string());
         match enumerate_crtsh(&client, &args.domain).await {
             Ok(subs) => {
-                println!("{} Found {} subdomains from crt.sh", "✓".green(), subs.len());
-                all_subdomains.extend(subs);
+                if all_subdomains.len() + subs.len() > MAX_SUBDOMAINS {
+                    let available_slots = MAX_SUBDOMAINS.saturating_sub(all_subdomains.len());
+                    println!("⚠️  Limiting crt.sh results to {} (max {} total)", available_slots, MAX_SUBDOMAINS);
+                    all_subdomains.extend(subs.into_iter().take(available_slots));
+                } else {
+                    println!("{} Found {} subdomains from crt.sh", style("✓").green(), subs.len());
+                    all_subdomains.extend(subs);
+                }
             }
-            Err(e) => println!("{} Error with crt.sh: {}", "⚠".yellow(), e),
+            Err(e) => println!("{} Error with crt.sh: {}", style("⚠").yellow(), e),
         }
     }
-    if use_brute {
+    if use_brute && all_subdomains.len() < MAX_SUBDOMAINS {
         pb.set_message("Brute forcing common subdomains...");
         methods_used.push("DNS Brute Force".to_string());
         let brute_subs = brute_force_subdomains(&client, &args.domain).await?;
-        println!("{} Found {} subdomains from brute force", "✓".green(), brute_subs.len());
-        all_subdomains.extend(brute_subs);
+        
+        if all_subdomains.len() + brute_subs.len() > MAX_SUBDOMAINS {
+            let available_slots = MAX_SUBDOMAINS.saturating_sub(all_subdomains.len());
+            println!("⚠️  Limiting brute force results to {} (max {} total)", available_slots, MAX_SUBDOMAINS);
+            all_subdomains.extend(brute_subs.into_iter().take(available_slots));
+        } else {
+            println!("{} Found {} subdomains from brute force", style("✓").green(), brute_subs.len());
+            all_subdomains.extend(brute_subs);
+        }
+    } else if all_subdomains.len() >= MAX_SUBDOMAINS {
+        println!("⚠️  Maximum subdomain limit reached, skipping brute force");
     }
     pb.finish_and_clear();
     let mut subdomain_infos: Vec<SubdomainInfo> = all_subdomains
@@ -70,10 +90,10 @@ pub async fn run(args: SubdomainArgs) -> Result<()> {
         .collect();
     subdomain_infos.sort_by(|a, b| a.subdomain.cmp(&b.subdomain));
     if !args.skip_alive_check {
-        println!("\n{} Testing subdomain availability...", "🔍".cyan());
+        println!("\n{} Testing subdomain availability...", style("⚡").cyan());
         test_subdomain_availability(&client, &mut subdomain_infos, &config).await;
     } else {
-        println!("\n{} Skipping availability testing (--skip-alive-check enabled)", "⚡".yellow());
+        println!("\n{} Skipping availability testing (--skip-alive-check enabled)", style("⚡").yellow());
     }
     let result = SubdomainResult {
         domain: args.domain.clone(),
@@ -161,7 +181,20 @@ async fn test_subdomain_availability(client: &HttpClient, subdomains: &mut [Subd
         let results = Arc::clone(&results);
         let subdomain = subdomain_info.subdomain.clone();
         let future = async move {
-            let _permit = semaphore.acquire().await.unwrap();
+            let _permit = match tokio::time::timeout(
+                Duration::from_secs(30),
+                semaphore.acquire()
+            ).await {
+                Ok(Ok(permit)) => permit,
+                Ok(Err(e)) => {
+                    eprintln!("Failed to acquire semaphore: {}", e);
+                    return;
+                }
+                Err(_) => {
+                    eprintln!("Timeout waiting for semaphore");
+                    return;
+                }
+            };
             let test_url = format!("https://{}", subdomain);
             let mut alive = client.check_url(&test_url).await.unwrap_or(false);
             if !alive {
@@ -184,11 +217,11 @@ async fn test_subdomain_availability(client: &HttpClient, subdomains: &mut [Subd
     pb.finish_and_clear();
 }
 fn display_results(result: &SubdomainResult) {
-    println!("\n{}", "Subdomain Enumeration Results:".green().bold());
-    println!("{}", "══════════════════════════════".cyan());
-    println!("  {} {}", "Domain:".yellow(), result.domain.cyan());
-    println!("  {} {}", "Total Found:".yellow(), result.total_found.to_string().green());
-    println!("  {} {}", "Methods:".yellow(), result.methods_used.join(", ").cyan());
+    println!("\n{}", style("Subdomain Enumeration Results:").green().bold());
+    println!("{}", style("══════════════════════════════").cyan());
+    println!("  {} {}", style("Domain:").yellow(), style(&result.domain).cyan());
+    println!("  {} {}", style("Total Found:").yellow(), style(result.total_found.to_string()).green());
+    // Status info will be printed below
     let alive_count = result.subdomains.iter()
         .filter(|s| s.alive.unwrap_or(false))
         .count();
@@ -196,25 +229,25 @@ fn display_results(result: &SubdomainResult) {
         .filter(|s| s.alive == Some(false))
         .count();
     println!("  {} {} alive, {} unreachable",
-        "Status:".yellow(),
-        alive_count.to_string().green(),
-        dead_count.to_string().red()
+        style("Status:").yellow(),
+        style(alive_count.to_string()).green(),
+        style(dead_count.to_string()).red()
     );
-    println!("\n{}", "Subdomains Found:".yellow());
-    println!("{}", "═════════════════".cyan());
+    println!("\n{}", style("Subdomains Found:").yellow());
+    println!("{}", style("═════════════════").cyan());
     for subdomain_info in &result.subdomains {
         let status_icon = match subdomain_info.alive {
-            Some(true) => "✓".green(),
-            Some(false) => "✗".red(),
-            None => "?".yellow(),
+            Some(true) => style("✓").green(),
+            Some(false) => style("✗").red(),
+            None => style("?").yellow(),
         };
-        println!("  {} {}", status_icon, subdomain_info.subdomain.cyan());
+        println!("  {} {}", status_icon, style(&subdomain_info.subdomain).cyan());
     }
     if alive_count > 0 {
-        println!("\n{}", "Live Subdomains for Further Investigation:".green().bold());
+        println!("\n{}", style("Live Subdomains for Further Investigation:").green().bold());
         for subdomain_info in &result.subdomains {
             if subdomain_info.alive.unwrap_or(false) {
-                println!("  • https://{}", subdomain_info.subdomain.blue().underline());
+                println!("  • https://{}", style(&subdomain_info.subdomain).blue().underlined());
             }
         }
     }

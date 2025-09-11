@@ -1,6 +1,6 @@
 use crate::cli::DomainArgs;
 use anyhow::Result;
-use colored::*;
+use console::style;
 use reqwest::Client;
 use std::collections::HashMap;
 use trust_dns_resolver::{
@@ -10,8 +10,8 @@ use trust_dns_resolver::{
 use whois::WhoIs;
 
 pub async fn run(args: DomainArgs) -> Result<()> {
-    println!("{} Domain Analysis: {}", "🌐".cyan(), args.domain.yellow().bold());
-    println!("DNS: {}, SSL: {}, WHOIS: {}", args.dns.to_string().cyan(), args.ssl.to_string().cyan(), args.whois.to_string().cyan());
+    println!("{} Domain Analysis: {}", style("🌐").cyan(), style(&args.domain).yellow().bold());
+    println!("DNS: {}, SSL: {}, WHOIS: {}", style(args.dns.to_string()).cyan(), style(args.ssl.to_string()).cyan(), style(args.whois.to_string()).cyan());
     
     if args.dns {
         perform_dns_analysis(&args.domain).await?;
@@ -32,7 +32,7 @@ pub async fn run(args: DomainArgs) -> Result<()> {
 }
 
 async fn perform_dns_analysis(domain: &str) -> Result<()> {
-    println!("\n{} DNS Analysis", "🔍".cyan());
+    println!("\n{} DNS Analysis", style("🔍").cyan());
     println!("{}", "=".repeat(40));
     
     let resolver = TokioAsyncResolver::tokio(
@@ -43,60 +43,60 @@ async fn perform_dns_analysis(domain: &str) -> Result<()> {
     // A Records
     match resolver.lookup_ip(domain).await {
         Ok(response) => {
-            println!("{} A Records:", "📍".green());
+            println!("{} A Records:", style("📋").green());
             for ip in response.iter() {
-                println!("   {}", ip.to_string().yellow());
+                println!("   {}", style(ip.to_string()).yellow());
             }
         }
-        Err(_) => println!("{} No A records found", "⚠️".yellow()),
+        Err(_) => println!("{} No A records found", style("⚠️").yellow()),
     }
     
     // MX Records  
     match resolver.mx_lookup(domain).await {
         Ok(response) => {
-            println!("{} MX Records:", "📧".green());
+            println!("{} MX Records:", style("📋").green());
             for mx in response.iter() {
                 println!("   {} (priority: {})", 
-                    mx.exchange().to_string().trim_end_matches('.').yellow(),
-                    mx.preference().to_string().cyan()
+                    style(mx.exchange().to_string().trim_end_matches('.')).yellow(),
+                    style(mx.preference().to_string()).cyan()
                 );
             }
         }
-        Err(_) => println!("{} No MX records found", "⚠️".yellow()),
+        Err(_) => println!("{} No MX records found", style("⚠️").yellow()),
     }
     
     // NS Records
     match resolver.ns_lookup(domain).await {
         Ok(response) => {
-            println!("{} NS Records:", "🌐".green());
+            println!("{} NS Records:", style("📋").green());
             for ns in response.iter() {
-                println!("   {}", ns.to_string().trim_end_matches('.').yellow());
+                println!("   {}", style(ns.to_string().trim_end_matches('.')).yellow());
             }
         }
-        Err(_) => println!("{} No NS records found", "⚠️".yellow()),
+        Err(_) => println!("{} No NS records found", style("⚠️").yellow()),
     }
     
     // TXT Records
     match resolver.txt_lookup(domain).await {
         Ok(response) => {
-            println!("{} TXT Records:", "📝".green());
+            println!("{} TXT Records:", style("📋").green());
             for txt in response.iter() {
                 let txt_data = txt.to_string();
                 if txt_data.len() > 100 {
-                    println!("   {}...", txt_data.chars().take(100).collect::<String>().yellow());
+                    println!("   {}...", style(txt_data.chars().take(100).collect::<String>()).yellow());
                 } else {
-                    println!("   {}", txt_data.yellow());
+                    println!("   {}", style(txt_data).yellow());
                 }
             }
         }
-        Err(_) => println!("{} No TXT records found", "⚠️".yellow()),
+        Err(_) => println!("{} No TXT records found", style("⚠️").yellow()),
     }
     
     Ok(())
 }
 
 async fn perform_ssl_analysis(domain: &str) -> Result<()> {
-    println!("\n{} SSL Certificate Analysis", "🔒".cyan());
+    println!("\n{} SSL Certificate Analysis", style("🔐").cyan());
     println!("{}", "=".repeat(40));
     
     let client = Client::new();
@@ -104,11 +104,11 @@ async fn perform_ssl_analysis(domain: &str) -> Result<()> {
     
     match client.head(&url).send().await {
         Ok(response) => {
-            println!("{} SSL Certificate Status: {}", "✅".green(), "Valid".green());
+            println!("{} SSL Certificate Status: {}", style("🔒").cyan(), style("Valid").green());
             
             if let Some(server) = response.headers().get("server") {
                 if let Ok(server_str) = server.to_str() {
-                    println!("🖥️  Server: {}", server_str.yellow());
+                    println!("🖥️  Server: {}", style(server_str).yellow());
                 }
             }
             
@@ -117,14 +117,14 @@ async fn perform_ssl_analysis(domain: &str) -> Result<()> {
                 Ok(details) => {
                     println!("📋 Certificate Details:");
                     for (key, value) in details {
-                        println!("   {}: {}", key.cyan(), value.yellow());
+                        println!("   {}: {}", style(key).cyan(), style(value).yellow());
                     }
                 }
-                Err(_) => println!("{} Could not retrieve detailed certificate info", "⚠️".yellow()),
+                Err(_) => println!("{} Could not retrieve detailed certificate info", style("⚠️").yellow()),
             }
         }
         Err(e) => {
-            println!("{} SSL Certificate Error: {}", "❌".red(), e);
+            println!("{} SSL Certificate Error: {}", style("❌").red(), e);
         }
     }
     
@@ -160,7 +160,7 @@ async fn get_ssl_details(domain: &str) -> Result<HashMap<String, String>> {
 }
 
 async fn perform_whois_analysis(_domain: &str) -> Result<()> {
-    println!("\n{} WHOIS Information", "📋".cyan());
+    println!("\n{} WHOIS Information", style("📄").cyan());
     println!("{}", "=".repeat(40));
     
     let mut whois = WhoIs::new("/usr/bin/whois".to_string());
@@ -173,7 +173,7 @@ async fn perform_whois_analysis(_domain: &str) -> Result<()> {
             parse_whois_data(&whois_data);
         }
         Err(e) => {
-            println!("{} WHOIS lookup failed: {}", "❌".red(), e);
+            println!("{} WHOIS lookup failed: {}", style("❌").red(), e);
         }
     }
     
@@ -190,30 +190,30 @@ fn parse_whois_data(whois_data: &str) {
         
         if line.to_lowercase().contains("domain name:") ||
            line.to_lowercase().contains("domain:") {
-            println!("🌐 {}", line.yellow());
+            println!("🌐 {}", style(line).yellow());
             found_info = true;
         } else if line.to_lowercase().contains("registrar:") {
-            println!("🏢 {}", line.yellow());
+            println!("🏢 {}", style(line).yellow());
             found_info = true;
         } else if line.to_lowercase().contains("creation date:") ||
                   line.to_lowercase().contains("created:") {
-            println!("📅 {}", line.yellow());
+            println!("📅 {}", style(line).yellow());
             found_info = true;
         } else if line.to_lowercase().contains("expir") {
-            println!("⏰ {}", line.yellow());
+            println!("⏰ {}", style(line).yellow());
             found_info = true;
         } else if line.to_lowercase().contains("name server:") ||
                   line.to_lowercase().contains("nserver:") {
-            println!("🌐 {}", line.yellow());
+            println!("🌐 {}", style(line).yellow());
             found_info = true;
         } else if line.to_lowercase().contains("status:") {
-            println!("🔒 {}", line.yellow());
+            println!("🔒 {}", style(line).yellow());
             found_info = true;
         }
     }
     
     if !found_info {
-        println!("{} Could not parse WHOIS data or domain not found", "⚠️".yellow());
+        println!("{} Could not parse WHOIS data or domain not found", style("⚠️").yellow());
         // Show raw data if parsing failed
         if whois_data.len() > 500 {
             println!("Raw WHOIS (truncated):");
@@ -227,41 +227,42 @@ fn parse_whois_data(whois_data: &str) {
 }
 
 async fn perform_basic_analysis(domain: &str) -> Result<()> {
-    println!("\n{} Basic Domain Information", "ℹ️".cyan());
+    println!("\n{} Basic Domain Information", style("ℹ️").cyan());
     println!("{}", "=".repeat(40));
     
     // Domain length and structure
-    println!("📏 Domain Length: {} characters", domain.len().to_string().yellow());
+    println!("📏 Domain Length: {} characters", style(domain.len().to_string()).yellow());
     
     let parts: Vec<&str> = domain.split('.').collect();
-    println!("🏗️  Domain Structure: {} levels", parts.len().to_string().yellow());
+    println!("🏗️  Domain Structure: {} levels", style(parts.len().to_string()).yellow());
     
     if parts.len() >= 2 {
-        let tld = parts.last().unwrap();
-        let sld = parts.get(parts.len() - 2).unwrap();
-        
-        println!("🌐 TLD: {}", tld.yellow());
-        println!("🏷️  SLD: {}", sld.yellow());
+        if let (Some(tld), Some(sld)) = (parts.last(), parts.get(parts.len() - 2)) {
+            println!("🌐 TLD: {}", style(tld).yellow());
+            println!("🏷️  SLD: {}", style(sld).yellow());
+        } else {
+            eprintln!("Warning: Could not parse domain structure");
+        }
         
         // Check if it's a subdomain
         if parts.len() > 2 {
-            println!("📁 Subdomain detected: {}", parts[0..parts.len()-2].join(".").yellow());
+            println!("📁 Subdomain detected: {}", style(parts[0..parts.len()-2].join(".")).yellow());
         }
     }
     
     // Check if domain is reachable via HTTP/HTTPS
     let client = Client::new();
     
-    println!("\n{} Connectivity Check:", "🔌".cyan());
+    println!("\n{} Connectivity Check:", style("🔗").cyan());
     
     // HTTP Check
     let http_url = format!("http://{}", domain);
     match client.head(&http_url).timeout(std::time::Duration::from_secs(5)).send().await {
         Ok(response) => {
-            println!("🌐 HTTP: {} (Status: {})", "Reachable".green(), response.status().as_str().yellow());
+            println!("🌐 HTTP: {} (Status: {})", style("Reachable").green(), style(response.status().as_str()).yellow());
         }
         Err(_) => {
-            println!("🌐 HTTP: {}", "Not reachable".red());
+            println!("🌐 HTTP: {}", style("Not reachable").red());
         }
     }
     
@@ -269,10 +270,10 @@ async fn perform_basic_analysis(domain: &str) -> Result<()> {
     let https_url = format!("https://{}", domain);
     match client.head(&https_url).timeout(std::time::Duration::from_secs(5)).send().await {
         Ok(response) => {
-            println!("🔒 HTTPS: {} (Status: {})", "Reachable".green(), response.status().as_str().yellow());
+            println!("🔒 HTTPS: {} (Status: {})", style("Reachable").green(), style(response.status().as_str()).yellow());
         }
         Err(_) => {
-            println!("🔒 HTTPS: {}", "Not reachable".red());
+            println!("🔒 HTTPS: {}", style("Not reachable").red());
         }
     }
     

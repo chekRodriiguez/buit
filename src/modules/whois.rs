@@ -1,7 +1,7 @@
 use crate::cli::WhoisArgs;
 use crate::utils::http::HttpClient;
 use anyhow::Result;
-use colored::*;
+use console::style;
 use serde::{Deserialize, Serialize};
 use std::net::IpAddr;
 #[derive(Debug, Serialize, Deserialize)]
@@ -19,7 +19,7 @@ pub struct WhoisResult {
     pub parsed: bool,
 }
 pub async fn run(args: WhoisArgs) -> Result<()> {
-    println!("{} WHOIS lookup: {}", "🔍".cyan(), args.target.yellow().bold());
+    println!("{} WHOIS lookup: {}", style("🔍").cyan(), style(&args.target).yellow().bold());
     let client = HttpClient::new()?;
     let target_type = if args.target.parse::<IpAddr>().is_ok() {
         "IP"
@@ -40,7 +40,7 @@ pub async fn run(args: WhoisArgs) -> Result<()> {
         parsed: false,
     };
     let mut success = false;
-    println!("  {} Trying local WHOIS command...", "🔍".cyan());
+    println!("  {} Trying local WHOIS command...", style("🔍").cyan());
     if let Ok(output) = std::process::Command::new("whois")
         .arg(&args.target)
         .output()
@@ -52,16 +52,16 @@ pub async fn run(args: WhoisArgs) -> Result<()> {
                 let data = result.raw_data.clone();
                 parse_whois_text(&mut result, &data);
             }
-            println!("  {} Local WHOIS command successful", "✓".green());
+            println!("  {} Local WHOIS command successful", style("✓").green());
         } else if !output.stderr.is_empty() {
             let error = String::from_utf8_lossy(&output.stderr);
-            println!("  {} Local WHOIS command failed: {}", "⚠".yellow(), error.trim());
+            println!("  {} Local WHOIS command failed: {}", style("⚠").yellow(), error.trim());
         }
     } else {
-        println!("  {} Local WHOIS command not available", "⚠".yellow());
+        println!("  {} Local WHOIS command not available", style("⚠").yellow());
     }
     if !success {
-        println!("  {} Trying web services...", "🔍".cyan());
+        println!("  {} Trying web services...", style("🔍").cyan());
         let whois_services = if target_type == "IP" {
             vec![
                 format!("https://ipapi.co/{}/json", args.target),
@@ -72,7 +72,7 @@ pub async fn run(args: WhoisArgs) -> Result<()> {
             ]
         };
         for (index, url) in whois_services.iter().enumerate() {
-            println!("  {} Trying web service {}...", "🔍".cyan(), index + 1);
+            println!("  {} Trying web service {}...", style("🔍").cyan(), index + 1);
             match client.get(url).await {
                 Ok(response) => {
                     if !response.is_empty()
@@ -89,19 +89,19 @@ pub async fn run(args: WhoisArgs) -> Result<()> {
                                 parse_whois_text(&mut result, &response);
                             }
                         }
-                        println!("  {} Web service successful", "✓".green());
+                        println!("  {} Web service successful", style("✓").green());
                         break;
                     }
                 }
                 Err(_) => {
-                    println!("  {} Web service {} failed", "⚠".yellow(), index + 1);
+                    println!("  {} Web service {} failed", style("⚠").yellow(), index + 1);
                     continue;
                 }
             }
         }
     }
     if !success {
-        println!("  {} All methods failed, using demo data", "ℹ".blue());
+        println!("  {} All methods failed, using demo data", style("ℹ").blue());
         result.raw_data = generate_sample_whois(&args.target, target_type);
         if args.parse {
             parse_sample_whois(&mut result, target_type);
@@ -272,41 +272,41 @@ fn extract_email_from_line(line: &str) -> Option<String> {
     None
 }
 fn display_results(result: &WhoisResult, parse: bool) {
-    println!("\n{}", "WHOIS Results:".green().bold());
-    println!("{}", "══════════════".cyan());
-    println!("  {} {}", "Target:".yellow(), result.target.cyan());
-    println!("  {} {}", "Type:".yellow(), result.target_type.cyan());
+    println!("\n{}", style("WHOIS Results:").green().bold());
+    println!("{}", style("══════════════").cyan());
+    println!("  {} {}", style("Target:").yellow(), style(&result.target).cyan());
+    println!("  {} {}", style("Type:").yellow(), style(&result.target_type).cyan());
     if parse && result.parsed {
         if let Some(registrar) = &result.registrar {
-            println!("  {} {}", "Registrar:".yellow(), registrar.cyan());
+            println!("  {} {}", style("Registrar:").yellow(), style(registrar).cyan());
         }
         if let Some(creation) = &result.creation_date {
-            println!("  {} {}", "Created:".yellow(), creation.cyan());
+            println!("  {} {}", style("Created:").yellow(), style(creation).cyan());
         }
         if let Some(expiration) = &result.expiration_date {
-            println!("  {} {}", "Expires:".yellow(), expiration.cyan());
+            println!("  {} {}", style("Expires:").yellow(), style(expiration).cyan());
         }
         if let Some(org) = &result.organization {
-            println!("  {} {}", "Organization:".yellow(), org.cyan());
+            println!("  {} {}", style("Organization:").yellow(), style(org).cyan());
         }
         if let Some(country) = &result.country {
-            println!("  {} {}", "Country:".yellow(), country.cyan());
+            println!("  {} {}", style("Country:").yellow(), style(country).cyan());
         }
         if !result.name_servers.is_empty() {
-            println!("\n{}", "Name Servers:".yellow());
+            println!("\n{}", style("Name Servers:").yellow());
             for ns in &result.name_servers {
-                println!("  • {}", ns.cyan());
+                println!("  • {}", style(ns).cyan());
             }
         }
         if !result.emails.is_empty() {
-            println!("\n{}", "Contact Emails:".yellow());
+            println!("\n{}", style("Contact Emails:").yellow());
             for email in &result.emails {
-                println!("  • {}", email.cyan());
+                println!("  • {}", style(email).cyan());
             }
         }
     } else {
-        println!("\n{}", "Raw WHOIS Data:".yellow());
-        println!("{}", "═══════════════".cyan());
+        println!("\n{}", style("Raw WHOIS Data:").yellow());
+        println!("{}", style("═══════════════").cyan());
         println!("{}", result.raw_data);
     }
 }

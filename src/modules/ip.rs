@@ -1,10 +1,10 @@
 use crate::cli::IpArgs;
 use crate::utils::http::HttpClient;
 use anyhow::Result;
-use colored::*;
+use console::style;
 use serde::{Deserialize, Serialize};
 use std::net::IpAddr;
-use dns_lookup::lookup_addr;
+use trust_dns_resolver::{config::*, TokioAsyncResolver};
 #[derive(Debug, Serialize, Deserialize)]
 pub struct IpResult {
     pub ip: String,
@@ -31,7 +31,7 @@ pub struct GeoInfo {
     pub timezone: Option<String>,
 }
 pub async fn run(args: IpArgs) -> Result<()> {
-    println!("{} IP Analysis: {}", "🌐".cyan(), args.ip.yellow().bold());
+    println!("{} IP Analysis: {}", style("🔍").cyan(), style(&args.ip).yellow().bold());
     let ip_addr: IpAddr = args.ip.parse()?;
     let client = HttpClient::new()?;
     let mut result = IpResult {
@@ -44,15 +44,18 @@ pub async fn run(args: IpArgs) -> Result<()> {
         ports: vec![],
     };
     if args.reverse {
-        println!("{} Performing reverse DNS lookup...", "🔍".cyan());
-        result.reverse_dns = lookup_addr(&ip_addr).ok();
+        println!("{} Performing reverse DNS lookup...", style("🔍").cyan());
+        let resolver = TokioAsyncResolver::tokio(ResolverConfig::default(), ResolverOpts::default());
+        if let Ok(response) = resolver.reverse_lookup(ip_addr).await {
+            result.reverse_dns = response.iter().next().map(|name| name.to_string());
+        }
     }
     if args.asn {
-        println!("{} Fetching ASN information...", "🔍".cyan());
+        println!("{} Fetching ASN information...", style("📋").cyan());
         result.asn = fetch_asn_info(&client, &args.ip).await?;
     }
     if args.geo {
-        println!("{} Getting geolocation data...", "📍".cyan());
+        println!("{} Getting geolocation data...", style("🌍").cyan());
         result.geolocation = fetch_geo_info(&client, &args.ip).await?;
     }
     display_results(&result);
@@ -77,7 +80,7 @@ async fn fetch_asn_info(client: &HttpClient, ip: &str) -> Result<Option<AsnInfo>
             }
         }
         Err(_) => {
-            println!("{} Trying ipinfo.io fallback...", "ℹ".cyan());
+            println!("{} Trying ipinfo.io fallback...", style("ℹ").cyan());
             
             let fallback_url = format!("https://ipinfo.io/{}/json", ip);
             if let Ok(response) = client.get(&fallback_url).await {
@@ -98,7 +101,7 @@ async fn fetch_asn_info(client: &HttpClient, ip: &str) -> Result<Option<AsnInfo>
         }
     }
     
-    println!("{} Using demo ASN data due to API limitations", "ℹ".cyan());
+    println!("{} Using demo ASN data due to API limitations", style("ℹ").cyan());
     Ok(Some(AsnInfo {
         number: "AS15169".to_string(),
         organization: "Google LLC".to_string(),
@@ -124,7 +127,7 @@ async fn fetch_geo_info(client: &HttpClient, ip: &str) -> Result<Option<GeoInfo>
             }
         }
         Err(_) => {
-            println!("{} Trying ipinfo.io fallback...", "ℹ".cyan());
+            println!("{} Trying ipinfo.io fallback...", style("ℹ").cyan());
             
             let fallback_url = format!("https://ipinfo.io/{}/json", ip);
             if let Ok(response) = client.get(&fallback_url).await {
@@ -143,7 +146,7 @@ async fn fetch_geo_info(client: &HttpClient, ip: &str) -> Result<Option<GeoInfo>
                 }
             }
             
-            println!("{} Trying freegeoip.app fallback...", "ℹ".cyan());
+            println!("{} Trying freegeoip.app fallback...", style("ℹ").cyan());
             let freegeo_url = format!("https://freegeoip.app/json/{}", ip);
             if let Ok(response) = client.get(&freegeo_url).await {
                 if let Ok(data) = serde_json::from_str::<serde_json::Value>(&response) {
@@ -160,7 +163,7 @@ async fn fetch_geo_info(client: &HttpClient, ip: &str) -> Result<Option<GeoInfo>
         }
     }
     
-    println!("{} Using demo geolocation data due to API limitations", "ℹ".cyan());
+    println!("{} Using demo geolocation data due to API limitations", style("ℹ").cyan());
     Ok(Some(GeoInfo {
         country: "United States".to_string(),
         city: Some("Mountain View".to_string()),
@@ -171,27 +174,27 @@ async fn fetch_geo_info(client: &HttpClient, ip: &str) -> Result<Option<GeoInfo>
     }))
 }
 fn display_results(result: &IpResult) {
-    println!("\n{}", "IP Analysis Results:".green().bold());
-    println!("{}", "═══════════════════".cyan());
-    println!("  {} {}", "IP Address:".yellow(), result.ip);
-    println!("  {} {}", "Version:".yellow(), result.version);
+    println!("\n{}", style("IP Analysis Results:").green().bold());
+    println!("{}", style("═══════════════════").cyan());
+    println!("  {} {}", style("IP Address:").yellow(), result.ip);
+    println!("  {} {}", style("Version:").yellow(), result.version);
     if let Some(rdns) = &result.reverse_dns {
-        println!("  {} {}", "Reverse DNS:".yellow(), rdns.cyan());
+        println!("  {} {}", style("Reverse DNS:").yellow(), style(rdns).cyan());
     }
     if let Some(asn) = &result.asn {
-        println!("\n{}", "ASN Information:".yellow());
-        println!("  Number: {}", asn.number.cyan());
-        println!("  Organization: {}", asn.organization.cyan());
-        println!("  Country: {}", asn.country.cyan());
+        println!("\n{}", style("ASN Information:").yellow());
+        println!("  Number: {}", style(&asn.number).cyan());
+        println!("  Organization: {}", style(&asn.organization).cyan());
+        println!("  Country: {}", style(&asn.country).cyan());
     }
     if let Some(geo) = &result.geolocation {
-        println!("\n{}", "Geolocation:".yellow());
-        println!("  Country: {}", geo.country.cyan());
+        println!("\n{}", style("Geolocation:").yellow());
+        println!("  Country: {}", style(&geo.country).cyan());
         if let Some(city) = &geo.city {
-            println!("  City: {}", city.cyan());
+            println!("  City: {}", style(city).cyan());
         }
         if let Some(region) = &geo.region {
-            println!("  Region: {}", region.cyan());
+            println!("  Region: {}", style(region).cyan());
         }
         if let (Some(lat), Some(lon)) = (geo.latitude, geo.longitude) {
             println!("  Coordinates: {}, {}", lat, lon);
